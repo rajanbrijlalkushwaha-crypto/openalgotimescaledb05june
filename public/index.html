@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Option Chain</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#e8e8e8;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111}
+
+    /* ── Top control bar ── */
+    .topbar{
+      background:#1a1a2e;color:#fff;
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      padding:7px 12px;border-bottom:2px solid #ff6b00;
+    }
+    .topbar h1{font-size:15px;font-weight:700;color:#ff9800;white-space:nowrap}
+    .dot{width:8px;height:8px;border-radius:50%;background:#f44336;flex-shrink:0}
+    .dot.on{background:#4caf50}
+    .tab-grp{display:flex;gap:3px}
+    .tab{padding:4px 10px;border-radius:3px;border:1px solid #444;background:transparent;
+         color:#aaa;cursor:pointer;font-size:12px;transition:all .15s}
+    .tab.active{background:#ff9800;color:#fff;border-color:#ff9800}
+    .tab.seg.active{background:#7c3aed;border-color:#7c3aed}
+    .search-wrap{position:relative}
+    .search-wrap input{background:#2d2d44;color:#fff;border:1px solid #444;border-radius:3px;
+                        padding:4px 8px;font-size:12px;width:150px}
+    .search-wrap input:focus{outline:none;border-color:#ff9800}
+    .dropdown{position:absolute;top:100%;left:0;right:0;background:#2d2d44;border:1px solid #555;
+               border-radius:3px;max-height:180px;overflow-y:auto;z-index:200;display:none}
+    .dropdown.open{display:block}
+    .dd-item{padding:5px 10px;cursor:pointer;color:#eee;font-size:12px}
+    .dd-item:hover{background:#3d3d5c}
+    select{background:#2d2d44;color:#fff;border:1px solid #444;border-radius:3px;
+           padding:4px 8px;font-size:12px;cursor:pointer}
+    select:focus{outline:none;border-color:#ff9800}
+    .spot-badge{
+      background:#ff9800;color:#fff;border-radius:4px;padding:3px 8px;
+      font-size:13px;font-weight:700;white-space:nowrap
+    }
+    .info-box{display:flex;flex-direction:column;align-items:flex-end;line-height:1.3}
+    .info-lbl{font-size:10px;color:#aaa}
+    .info-val{font-size:13px;font-weight:700}
+    .g{color:#4caf50}.r{color:#f44336}
+
+    /* ── Table wrapper ── */
+    .wrap{overflow-x:auto;max-height:calc(100vh - 52px);overflow-y:auto;background:#e8e8e8;padding:4px}
+
+    table{width:100%;border-collapse:separate;border-spacing:1px;table-layout:fixed}
+
+    /* ── Header ── */
+    thead th{
+      background:#1a1a2e;color:#fff;padding:6px 4px;font-size:11px;font-weight:700;
+      text-align:center;white-space:nowrap;border:1px solid #333;position:sticky;top:0;z-index:5
+    }
+    thead th.ce{color:#4fc3f7}
+    thead th.pe{color:#ef9a9a}
+    thead th.sk{background:#2d1b00;color:#ff9800}
+
+    /* ── Cell base ── */
+    td{padding:0;background:#fff;border:1px solid #ddd;vertical-align:middle}
+    .cv{display:flex;flex-direction:column;align-items:flex-end;padding:3px 5px;
+        line-height:1.3;height:100%}
+    .cv.left{align-items:flex-start}
+    .cv.center{align-items:center}
+    .v1{font-size:12px;font-weight:600;white-space:nowrap}
+    .v2{font-size:10px;color:#555;white-space:nowrap}
+    .v2.g{color:#2e7d32}.v2.r{color:#c62828}
+    .v1.g{color:#1b5e20}.v1.r{color:#b71c1c}
+
+    /* ── Strike cell ── */
+    .sk-td{background:#f0f0f0;border:1px solid #bbb}
+    .sk-cv{display:flex;flex-direction:column;align-items:center;justify-content:center;
+           padding:3px 4px;line-height:1.4}
+    .sk-v{font-size:13px;font-weight:800;color:#1a1a2e;white-space:nowrap}
+    .sk-lbl{font-size:9px;color:#888;font-weight:400;text-transform:uppercase}
+
+    /* ATM row */
+    .atm-td{background:#ff9800!important;border-color:#e65100!important}
+    .atm-td .sk-v{color:#fff!important}
+    .atm-td .sk-lbl{color:#ffe0b2!important}
+    tr.atm-row td{border-top:2px solid #ff9800!important;border-bottom:2px solid #ff9800!important}
+
+    /* Max OI highlight */
+    .max-oi-ce{background:#e3f2fd!important}
+    .max-oi-pe{background:#e3f2fd!important}
+    /* Max Vol highlight */
+    .max-vol-ce{background:#fffde7!important}
+    .max-vol-pe{background:#fffde7!important}
+    /* Runner up yellow */
+    .hi-ce{background:#fff9c4!important}
+    .hi-pe{background:#fff9c4!important}
+
+    /* ── S-REVERSAL ── */
+    .rev-td{background:#f8f8f8!important}
+    .rev-out{color:#1565c0;font-weight:700;font-size:11px}
+    .rev-down{color:#880e4f;font-weight:700;font-size:11px}
+    .rev-syn{font-size:11px;color:#333;font-weight:600}
+
+    /* ── Spot separator row ── */
+    .spot-row td{
+      background:transparent!important;border:none!important;padding:0;height:5px
+    }
+    .spot-row .spot-line{
+      background:#f44336;height:3px;width:100%;display:block
+    }
+
+    /* ── Signal row ── */
+    .sig-row td{background:#f5f5f5!important;border:1px solid #ddd;padding:0}
+    .sig-box{
+      display:inline-flex;align-items:center;gap:4px;
+      border:2px solid #333;border-radius:4px;padding:2px 6px;margin:2px;
+      font-size:11px;font-weight:700;white-space:nowrap
+    }
+    .sig-wtb{border-color:#1565c0;color:#1565c0}
+    .sig-str{border-color:#880e4f;color:#880e4f}
+    .sig-cell{text-align:center;vertical-align:middle}
+
+    /* ── Total row ── */
+    .total-row td{background:#eee!important;border:1px solid #bbb}
+    .total-row .cv{font-size:11px}
+    .total-lbl{font-weight:800;font-size:11px;color:#333;text-align:center;vertical-align:middle;
+               background:#ddd!important}
+
+    /* ── PE-CE summary at bottom ── */
+    .pece-cell{background:#ff9800!important;text-align:center;vertical-align:middle;padding:4px}
+    .pece-cell span{display:block;font-weight:700;font-size:11px;color:#fff}
+
+    /* ── Loading ── */
+    .loading{display:flex;align-items:center;justify-content:center;height:200px;
+             color:#555;font-size:14px;background:#f5f5f5}
+
+    /* ── Column widths ── */
+    .w-delta{width:56px} .w-oichg{width:100px} .w-oi{width:100px}
+    .w-vol{width:100px}  .w-rev{width:80px}    .w-strike{width:90px}
+
+    /* flash */
+    @keyframes fg{0%,100%{background:#fff}30%{background:#c8e6c9}}
+    @keyframes fr{0%,100%{background:#fff}30%{background:#ffcdd2}}
+    .fu{animation:fg .5s}
+    .fd{animation:fr .5s}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Option Chain</h1>
+  <span class="dot" id="dot"></span>
+
+  <!-- Segment tabs -->
+  <div class="tab-grp" id="segTabs">
+    <button class="tab seg active" data-seg="NFO">NSE</button>
+    <button class="tab seg" data-seg="BFO">BSE</button>
+    <button class="tab seg" data-seg="MCX">MCX</button>
+  </div>
+
+  <!-- Symbol search -->
+  <div class="search-wrap">
+    <input id="undSearch" placeholder="Symbol..." autocomplete="off"/>
+    <div class="dropdown" id="undDrop"></div>
+  </div>
+
+  <!-- Expiry -->
+  <select id="expSel"><option>—</option></select>
+
+  <!-- Spot info -->
+  <div class="spot-badge" id="spotBadge">— SPOT</div>
+
+  <div class="info-box">
+    <span class="info-lbl">ATM</span>
+    <span class="info-val" id="atmVal" style="color:#ff9800">—</span>
+  </div>
+  <div class="info-box" style="margin-left:auto">
+    <span class="info-lbl">Updated</span>
+    <span class="info-val" id="updAt" style="font-size:11px;color:#aaa">—</span>
+  </div>
+</div>
+
+<div id="root"><div class="loading">Connecting to server...</div></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const S = {
+  ws: null,
+  underlyings: {NFO:[],BFO:[],MCX:[]},
+  expiries: {},
+  chain: {},
+  active: {seg:'NFO', sym:null, exp:null},
+  prev: {},
+};
+
+// ── Formatters ─────────────────────────────────────────────────────────────────
+const INR = n => n == null ? '—' : '₹' + Math.abs(n).toLocaleString('en-IN');
+const PCT = n => n == null ? '' : (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+const F2  = n => n == null ? '—' : Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const F4  = n => n == null ? '—' : Number(n).toFixed(4);
+const fK  = n => {
+  if (n == null) return '—';
+  const a = Math.abs(n), s = n < 0 ? '-' : '';
+  if (a >= 1e7) return s+'₹'+(a/1e7).toFixed(2)+'Cr';
+  if (a >= 1e5) return s+'₹'+(a/1e5).toFixed(2)+'L';
+  if (a >= 1e3) return s+'₹'+(a/1e3).toFixed(1)+'K';
+  return s+'₹'+a;
+};
+const fi  = n => n == null ? '—' : Number(n).toLocaleString('en-IN');
+
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const $dot  = document.getElementById('dot');
+const $segs = document.getElementById('segTabs');
+const $srch = document.getElementById('undSearch');
+const $drop = document.getElementById('undDrop');
+const $exp  = document.getElementById('expSel');
+const $spot = document.getElementById('spotBadge');
+const $atm  = document.getElementById('atmVal');
+const $upd  = document.getElementById('updAt');
+const $root = document.getElementById('root');
+
+// ── WebSocket ──────────────────────────────────────────────────────────────────
+function connect() {
+  S.ws = new WebSocket(`ws://${location.host}/ws`);
+  S.ws.onopen    = () => $dot.classList.add('on');
+  S.ws.onclose   = () => { $dot.classList.remove('on'); setTimeout(connect,3000); };
+  S.ws.onmessage = ({data}) => { try{handle(JSON.parse(data));}catch(_){} };
+}
+function handle(m) {
+  if (m.type==='init')            return onInit(m.data);
+  if (m.type==='chain_update')    return onChainUpdate(m.symbol,m.expiry,m.data);
+  if (m.type==='tick')            return onTick(m.data);
+  if (m.type==='expiries_update') return onExpiriesUpdate(m.symbol,m.data);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+function onInit(d) {
+  S.underlyings = d.underlyings || {NFO:[],BFO:[],MCX:[]};
+  S.expiries    = d.expiries    || {};
+  S.chain       = d.chain       || {};
+  buildDrop(S.active.seg);
+  const loaded = Object.keys(S.chain);
+  if (loaded.length) {
+    const sym = loaded[0];
+    const seg = Object.keys(S.underlyings).find(s => S.underlyings[s]?.includes(sym)) || 'NFO';
+    setSeg(seg, false);
+    pickSym(sym, false);
+  }
+}
+
+// ── Segment ────────────────────────────────────────────────────────────────────
+$segs.querySelectorAll('.seg').forEach(b => b.onclick = () => setSeg(b.dataset.seg, true));
+function setSeg(seg, reset) {
+  S.active.seg = seg;
+  $segs.querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b.dataset.seg===seg));
+  buildDrop(seg);
+  if (reset) { S.active.sym=null; S.active.exp=null; $srch.value=''; $exp.innerHTML='<option>—</option>'; $root.innerHTML='<div class="loading">Select a symbol</div>'; }
+}
+
+// ── Symbol search ──────────────────────────────────────────────────────────────
+function buildDrop(seg, q) {
+  const list = (S.underlyings[seg]||[]).filter(s => !q || s.toLowerCase().includes(q.toLowerCase()));
+  $drop.innerHTML = list.map(s=>`<div class="dd-item${s===S.active.sym?' sel':''}" data-s="${s}">${s}</div>`).join('');
+  $drop.classList.toggle('open', list.length > 0 && (!!q || document.activeElement===$srch));
+  $drop.querySelectorAll('.dd-item').forEach(el => el.onmousedown=e=>{e.preventDefault();pickSym(el.dataset.s,true);});
+}
+$srch.addEventListener('input',  () => buildDrop(S.active.seg, $srch.value));
+$srch.addEventListener('focus',  () => buildDrop(S.active.seg, $srch.value));
+$srch.addEventListener('blur',   () => setTimeout(()=>$drop.classList.remove('open'),150));
+
+function pickSym(sym, load) {
+  S.active.sym = sym;
+  $srch.value = sym;
+  $drop.classList.remove('open');
+  const exps = S.expiries[sym] || [];
+  $exp.innerHTML = exps.map(e=>`<option value="${e}">${e}</option>`).join('') || '<option>—</option>';
+  const loadedExp = Object.keys(S.chain[sym]||{});
+  const def = loadedExp[0] || exps[0] || null;
+  if (def) { $exp.value=def; pickExp(def, load); }
+  else if (load) { $root.innerHTML='<div class="loading">Loading expiries...</div>'; S.ws.send(JSON.stringify({action:'load',symbol:sym,expiry:'?',segment:S.active.seg})); }
+}
+$exp.onchange = () => pickExp($exp.value, true);
+function pickExp(exp, load) {
+  S.active.exp = exp;
+  const cd = S.chain[S.active.sym]?.[exp];
+  if (cd) render(cd);
+  else if (load !== false) {
+    $root.innerHTML='<div class="loading">Loading chain...</div>';
+    S.ws.send(JSON.stringify({action:'load',symbol:S.active.sym,expiry:exp,segment:S.active.seg}));
+  }
+}
+
+// ── Chain update ───────────────────────────────────────────────────────────────
+function onChainUpdate(sym, exp, data) {
+  S.chain[sym] = S.chain[sym]||{};
+  S.chain[sym][exp] = data;
+  if (sym===S.active.sym && exp===S.active.exp) render(data);
+}
+function onExpiriesUpdate(sym, list) {
+  S.expiries[sym] = list;
+  if (sym===S.active.sym) { $exp.innerHTML=list.map(e=>`<option value="${e}">${e}</option>`).join(''); if(list[0]){$exp.value=list[0];pickExp(list[0],true);} }
+}
+
+// ── Live tick ──────────────────────────────────────────────────────────────────
+function onTick(t) {
+  const {symbol:sym, ltp} = t;
+  if (ltp==null) return;
+  const prev = S.prev[sym]?.ltp;
+  S.prev[sym] = {ltp};
+  const cd = S.chain[S.active.sym]?.[S.active.exp];
+  if (!cd) return;
+  if (sym===S.active.sym) {
+    cd.underlying_ltp = ltp;
+    $spot.textContent = fi(ltp) + ' SPOT';
+    return;
+  }
+  // Update individual cells
+  const ltpEl = document.querySelector(`[data-ltp="${sym}"]`);
+  if (ltpEl) {
+    const dir = prev==null ? '' : ltp>prev ? 'u' : ltp<prev ? 'd' : '';
+    ltpEl.closest('td').classList.remove('fu','fd');
+    void ltpEl.closest('td').offsetWidth;
+    if (dir) ltpEl.closest('td').classList.add('f'+dir);
+    ltpEl.textContent = F2(ltp);
+  }
+  // Update other fields from tick
+  for (const fld of ['oi','volume','delta','iv','ltp_chg','oi_chg']) {
+    if (t[fld]==null) continue;
+    const el = document.querySelector(`[data-${fld}="${sym}"]`);
+    if (!el) continue;
+    if (fld==='ltp_chg') { el.className = t[fld]>=0?'v2 g':'v2 r'; el.textContent = PCT(t[fld]); }
+    else if (fld==='oi_chg') { el.className = t[fld]>=0?'v1 g':'v1 r'; el.textContent = INR(t[fld]); }
+    else if (fld==='delta') el.textContent = F4(t[fld]);
+    else if (fld==='iv') el.textContent = t[fld]!=null ? t[fld].toFixed(1)+'%' : '—';
+    else el.textContent = fi(t[fld]);
+  }
+  // Update chain cache
+  for (const row of cd.strikes||[]) {
+    for (const side of ['ce','pe']) {
+      if (row[side]?.symbol!==sym) continue;
+      const o=row[side];
+      for (const k of ['ltp','oi','volume','ltp_chg','oi_chg','delta','gamma','theta','vega','iv']) if (t[k]!=null) o[k]=t[k];
+    }
+  }
+}
+
+// ── Render full chain ──────────────────────────────────────────────────────────
+function render(data) {
+  if (!data?.strikes?.length) { $root.innerHTML='<div class="loading">No data</div>'; return; }
+  const {underlying_ltp:ultp, atm_strike:atm, strikes, fetched_at} = data;
+
+  $spot.textContent = fi(ultp) + ' SPOT';
+  $atm.textContent  = fi(atm);
+  if (fetched_at) $upd.textContent = new Date(fetched_at).toLocaleTimeString('en-IN');
+
+  // Compute maxes for percentage bars
+  let maxCeOI=1, maxPeOI=1, maxCeVol=1, maxPeVol=1;
+  let totCeOI=0, totPeOI=0, totCeVol=0, totPeVol=0, totCeOIChg=0, totPeOIChg=0;
+  for (const r of strikes) {
+    const co=r.ce?.oi||0, po=r.pe?.oi||0, cv=r.ce?.volume||0, pv=r.pe?.volume||0;
+    if (co>maxCeOI) maxCeOI=co; if (po>maxPeOI) maxPeOI=po;
+    if (cv>maxCeVol) maxCeVol=cv; if (pv>maxPeVol) maxPeVol=pv;
+    totCeOI+=co; totPeOI+=po; totCeVol+=cv; totPeVol+=pv;
+    totCeOIChg+=(r.ce?.oi_chg||0); totPeOIChg+=(r.pe?.oi_chg||0);
+  }
+
+  // Find spot row index
+  const spotIdx = strikes.findLastIndex ? strikes.findLastIndex(r=>r.strike <= ultp) : (() => { let i=-1; for(let j=0;j<strikes.length;j++) if(strikes[j].strike<=ultp) i=j; return i; })();
+
+  // Compute WTB/STRONG signals
+  const aboveStrikes = strikes.slice(0, spotIdx+1);
+  const belowStrikes = strikes.slice(spotIdx+1);
+  const wtbOI  = totCeOI  > 0 ? (maxCeOI/totCeOI*100).toFixed(2)  : '0.00';
+  const wtbVol  = totCeVol > 0 ? (maxCeVol/totCeVol*100).toFixed(2) : '0.00';
+  const strVol  = totPeVol > 0 ? (maxPeVol/totPeVol*100).toFixed(2) : '0.00';
+  const strOI   = totPeOI  > 0 ? (maxPeOI/totPeOI*100).toFixed(2)  : '0.00';
+
+  const spotHtml = buildSpotRow(wtbOI, wtbVol, strVol, strOI);
+  const rowParts = strikes.map((r, i) => {
+    const rowHtml = buildRow(r, atm, ultp, maxCeOI, maxPeOI, maxCeVol, maxPeVol, totCeOI, totPeOI, totCeVol, totPeVol);
+    // Inject spot separator after the last row whose strike <= spot
+    return (i === spotIdx) ? rowHtml + spotHtml : rowHtml;
+  });
+  const rows = rowParts.join('');
+  const totalRow = buildTotalRow(totCeOIChg, totCeOI, totCeVol, totPeVol, totPeOI, totPeOIChg);
+
+  $root.innerHTML = `
+  <div class="wrap">
+    <table>
+      <thead><tr>
+        <th class="ce w-delta">Delta</th>
+        <th class="ce w-oichg">OI Chg</th>
+        <th class="ce w-oi">OI</th>
+        <th class="ce w-vol">VOLUME</th>
+        <th class="ce w-rev">S-REVERSAL</th>
+        <th class="sk w-strike">ATM ∨ STRIKE</th>
+        <th class="pe w-rev">S-REVERSAL</th>
+        <th class="pe w-vol">VOLUME</th>
+        <th class="pe w-oi">OI</th>
+        <th class="pe w-oichg">OI Chg</th>
+        <th class="pe w-delta">Delta</th>
+      </tr></thead>
+      <tbody>${rows}${totalRow}</tbody>
+    </table>
+  </div>`;
+
+  // Inject spot row
+  $root.innerHTML = $root.innerHTML; // force re-parse handled by placeholder above
+}
+
+function buildRow(r, atm, ultp, mCeOI, mPeOI, mCeVol, mPeVol, tCeOI, tPeOI, tCeVol, tPeVol) {
+  const strike = r.strike;
+  const ce = r.ce||{}, pe = r.pe||{};
+  const isATM   = strike===atm;
+  const isAbove = ultp && strike<=ultp; // above or at spot
+
+  const ceOIPct  = tCeOI  > 0 ? (ce.oi||0)/tCeOI*100  : 0;
+  const peOIPct  = tPeOI  > 0 ? (pe.oi||0)/tPeOI*100  : 0;
+  const ceVolPct = tCeVol > 0 ? (ce.volume||0)/tCeVol*100 : 0;
+  const peVolPct = tPeVol > 0 ? (pe.volume||0)/tPeVol*100 : 0;
+
+  const ceOIChgPct = tCeOI>0 ? (ce.oi_chg||0)/tCeOI*100 : 0;
+  const peOIChgPct = tPeOI>0 ? (pe.oi_chg||0)/tPeOI*100 : 0;
+
+  // Highlight classes
+  const ceOICls  = (ce.oi||0)===mCeOI ? 'max-oi-ce' : '';
+  const peOICls  = (pe.oi||0)===mPeOI ? 'max-oi-pe' : '';
+  const ceVolCls = (ce.volume||0)===mCeVol ? 'max-vol-ce' : '';
+  const peVolCls = (pe.volume||0)===mPeVol ? 'max-vol-pe' : '';
+
+  // S-REVERSAL signal for CE
+  const ceRev = sReversal(ce.ltp_chg, ce.oi_chg);
+  // Synthetic futures for PE column: Strike + CE_LTP - PE_LTP
+  const synFut = (ce.ltp!=null && pe.ltp!=null) ? +(strike + ce.ltp - pe.ltp).toFixed(2) : null;
+
+  const ceOIChgCls  = (ce.oi_chg||0)>=0 ? 'g' : 'r';
+  const peOIChgCls  = (pe.oi_chg||0)>=0 ? 'g' : 'r';
+  const ceLtpChgCls = (ce.ltp_chg||0)>=0 ? 'g' : 'r';
+  const peLtpChgCls = (pe.ltp_chg||0)>=0 ? 'g' : 'r';
+
+  const skCls = isATM ? 'sk-td atm-td' : 'sk-td';
+  const rowCls = isATM ? 'atm-row' : '';
+
+  // Greek sub-values
+  const ceGreeks = ce.iv!=null ? `Δ${F4(ce.delta)} γ${ce.gamma!=null?ce.gamma.toFixed(4):'—'}` : '';
+  const peGreeks = pe.iv!=null ? `Δ${F4(pe.delta)} γ${pe.gamma!=null?pe.gamma.toFixed(4):'—'}` : '';
+
+  return `<tr class="${rowCls}">
+    <!-- CE Delta -->
+    <td class="w-delta"><div class="cv center">
+      <span class="v1" data-delta="${ce.symbol}">${F4(ce.delta)}</span>
+      <span class="v2">${ce.iv!=null?ce.iv.toFixed(1)+'%':'—'}</span>
+    </div></td>
+    <!-- CE OI Chg -->
+    <td class="w-oichg"><div class="cv">
+      <span class="v1 ${ceOIChgCls}" data-oi_chg="${ce.symbol}">${INR(ce.oi_chg)}</span>
+      <span class="v2 ${ceOIChgCls}">${PCT(ceOIChgPct)}</span>
+    </div></td>
+    <!-- CE OI -->
+    <td class="w-oi ${ceOICls}"><div class="cv">
+      <span class="v1">${INR(ce.oi)}</span>
+      <span class="v2">${ceOIPct.toFixed(2)}%</span>
+    </div></td>
+    <!-- CE Volume -->
+    <td class="w-vol ${ceVolCls}"><div class="cv">
+      <span class="v1">${INR(ce.volume)}</span>
+      <span class="v2">${ceVolPct.toFixed(2)}%</span>
+    </div></td>
+    <!-- CE S-REVERSAL -->
+    <td class="w-rev rev-td"><div class="cv center">
+      <span class="${ceRev==='Break Out'?'rev-out':'rev-down'}">${ceRev}</span>
+    </div></td>
+    <!-- STRIKE -->
+    <td class="${skCls} w-strike"><div class="sk-cv">
+      <span class="sk-v">${fi(strike)}</span>
+      <span class="sk-lbl">${isATM?'ATM':''}</span>
+    </div></td>
+    <!-- PE S-REVERSAL (Synthetic Futures) -->
+    <td class="w-rev rev-td"><div class="cv center">
+      <span class="rev-syn">${synFut!=null?fi(synFut):'—'}</span>
+      <span class="v2">${pe.ltp!=null?'LTP: '+F2(pe.ltp):'—'}</span>
+    </div></td>
+    <!-- PE Volume -->
+    <td class="w-vol ${peVolCls}"><div class="cv left">
+      <span class="v1">${INR(pe.volume)}</span>
+      <span class="v2">${peVolPct.toFixed(2)}%</span>
+    </div></td>
+    <!-- PE OI -->
+    <td class="w-oi ${peOICls}"><div class="cv left">
+      <span class="v1">${INR(pe.oi)}</span>
+      <span class="v2">${peOIPct.toFixed(2)}%</span>
+    </div></td>
+    <!-- PE OI Chg -->
+    <td class="w-oichg"><div class="cv left">
+      <span class="v1 ${peOIChgCls}" data-oi_chg="${pe.symbol}">${INR(pe.oi_chg)}</span>
+      <span class="v2 ${peOIChgCls}">${PCT(peOIChgPct)}</span>
+    </div></td>
+    <!-- PE Delta -->
+    <td class="w-delta"><div class="cv center">
+      <span class="v1" data-delta="${pe.symbol}">${F4(pe.delta)}</span>
+      <span class="v2">${pe.iv!=null?pe.iv.toFixed(1)+'%':'—'}</span>
+    </div></td>
+  </tr>
+  <!-- Greeks row -->
+  <tr style="background:#fafafa">
+    <td colspan="4" style="border:1px solid #eee;padding:1px 5px;text-align:right;font-size:10px;color:#888">
+      CE: θ<b>${ce.theta!=null?ce.theta.toFixed(2):'—'}</b> ν<b>${ce.vega!=null?ce.vega.toFixed(2):'—'}</b>
+    </td>
+    <td class="rev-td" style="border:1px solid #eee"></td>
+    <td class="${skCls}" style="border:1px solid #bbb"></td>
+    <td class="rev-td" style="border:1px solid #eee">
+      <div style="text-align:center;font-size:10px;color:#888">CE: <b data-ltp="${ce.symbol}">${F2(ce.ltp)}</b></div>
+    </td>
+    <td colspan="4" style="border:1px solid #eee;padding:1px 5px;font-size:10px;color:#888">
+      PE: θ<b>${pe.theta!=null?pe.theta.toFixed(2):'—'}</b> ν<b>${pe.vega!=null?pe.vega.toFixed(2):'—'}</b>
+      &nbsp;|&nbsp;PE LTP: <b data-ltp="${pe.symbol}">${F2(pe.ltp)}</b>
+    </td>
+  </tr>`;
+}
+
+function buildSpotRow(wtbOI, wtbVol, strVol, strOI) {
+  return `<tr class="sig-row">
+    <td class="sig-cell" colspan="2"><span class="sig-box sig-wtb">WTB ${wtbOI}% ▼</span></td>
+    <td class="sig-cell" colspan="2"><span class="sig-box sig-wtb">WTB ${wtbVol}% ↑</span></td>
+    <td colspan="3" style="background:#f44336;height:3px;padding:0;border:none"></td>
+    <td class="sig-cell" colspan="2"><span class="sig-box sig-str">STRONG ${strVol}% ↘</span></td>
+    <td class="sig-cell" colspan="2"><span class="sig-box sig-str">STRONG ${strOI}% ↑</span></td>
+  </tr>`;
+}
+
+function buildTotalRow(cOIChg, cOI, cVol, pVol, pOI, pOIChg) {
+  const cChgCls = cOIChg>=0 ? 'g':'r', pChgCls = pOIChg>=0?'g':'r';
+  return `<tr class="total-row">
+    <td class="total-lbl" colspan="2">Total</td>
+    <td class="w-oichg"><div class="cv"><span class="v1 ${cChgCls}">${INR(cOIChg)}</span><span class="v2 ${cChgCls}">${cOIChg>=0?'▲':'▼'}</span></div></td>
+    <td class="w-oi"><div class="cv"><span class="v1">${INR(cOI)}</span></div></td>
+    <td class="w-vol"><div class="cv"><span class="v1">${INR(cVol)}</span></div></td>
+    <td class="w-rev rev-td"></td>
+    <td class="sk-td w-strike">
+      <div class="sk-cv" style="font-size:10px;color:#ff9800;font-weight:700">
+        PE-CE<br>OI Chg<br><span style="font-size:12px">${INR(pOIChg - cOIChg)}</span>
+        <span style="${(pOIChg-cOIChg)>=0?'color:#4caf50':'color:#f44336'}">${(pOIChg-cOIChg)>=0?'▲':'▼'}</span>
+      </div>
+    </td>
+    <td class="w-rev rev-td"></td>
+    <td class="w-vol"><div class="cv left"><span class="v1">${INR(pVol)}</span></div></td>
+    <td class="w-oi"><div class="cv left"><span class="v1">${INR(pOI)}</span></div></td>
+    <td class="w-oichg"><div class="cv left"><span class="v1 ${pChgCls}">${INR(pOIChg)}</span><span class="v2 ${pChgCls}">${pOIChg>=0?'▲':'▼'}</span></div></td>
+    <td class="total-lbl">Total</td>
+  </tr>`;
+}
+
+function sReversal(ltpChg, oiChg) {
+  const lc = ltpChg||0, oc = oiChg||0;
+  if ((lc>=0 && oc>=0)||(lc>=0 && oc<0)) return 'Break Out';
+  return 'Break Down';
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+connect();
+</script>
+</body>
+</html>

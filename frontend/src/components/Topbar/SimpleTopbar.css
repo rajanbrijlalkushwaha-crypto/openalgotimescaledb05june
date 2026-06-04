@@ -1,0 +1,190 @@
+.stb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--header-bg, #1a1a2e);
+  border-bottom: 2px solid #f18713;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  flex-wrap: wrap;
+  min-height: 48px;
+}
+
+/* ── Symbol dropdown button ─────────────────────────────── */
+.stb-sym-wrap { position: relative; }
+
+.stb-sym-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #2d2d44;
+  border: 1px solid #444;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 180px;
+  text-align: left;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+.stb-sym-btn:hover, .stb-sym-btn.open { border-color: #f18713; }
+
+.stb-sym-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  border-radius: 3px;
+  padding: 2px 5px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.stb-sym-name    { flex: 1; }
+.stb-sym-placeholder { flex: 1; color: #888; font-weight: 400; }
+.stb-sym-arrow   { font-size: 9px; color: #888; margin-left: auto; }
+
+/* ── Dropdown panel ─────────────────────────────────────── */
+.stb-sym-drop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 260px;
+  background: #1a1a2e;
+  border: 1px solid #3a3a55;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  max-height: 380px;
+}
+
+/* Search inside dropdown */
+.stb-sym-search-wrap {
+  position: relative;
+  padding: 8px 8px 6px;
+  border-bottom: 1px solid #2d2d44;
+  flex-shrink: 0;
+}
+.stb-sym-search {
+  width: 100%;
+  background: #2d2d44;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  padding: 6px 28px 6px 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+.stb-sym-search:focus { border-color: #f18713; }
+.stb-sym-search::placeholder { color: #666; }
+.stb-sym-clear {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.stb-sym-clear:hover { color: #fff; }
+
+/* Scrollable list */
+.stb-sym-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Exchange group header */
+.stb-sym-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-left: 3px solid;
+  background: #13132a;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.stb-sym-count {
+  font-size: 10px;
+  color: #555;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* Symbol row */
+.stb-sym-item {
+  padding: 7px 14px;
+  font-size: 13px;
+  color: #ccc;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 0.1s;
+}
+.stb-sym-item:hover  { background: #2d2d44; color: #fff; }
+.stb-sym-item.active { background: #1e1e38; font-weight: 700; border-left-width: 3px; }
+
+.stb-sym-empty {
+  padding: 16px 14px;
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+}
+
+/* ── Expiry select ──────────────────────────────────────── */
+.stb-select {
+  background: #2d2d44;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.stb-select:focus { border-color: #f18713; }
+
+/* ── Divider ────────────────────────────────────────────── */
+.stb-divider { width: 1px; height: 24px; background: #333; margin: 0 4px; }
+
+/* ── Info badges ────────────────────────────────────────── */
+.stb-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.stb-badge.sym  { background: #1e3a5f; color: #60a5fa; }
+.stb-badge.exp  { background: #2d1b00; color: #f18713; }
+.stb-badge.spot { background: #1e3a1e; color: #4ade80; font-size: 14px; }
+
+/* ── Right side ─────────────────────────────────────────── */
+.stb-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+.stb-ws { font-size: 11px; font-weight: 700; color: #555; letter-spacing: 0.5px; }
+.stb-ws.on { color: #4ade80; }
+
+.stb-time {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f18713;
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
+  text-align: right;
+}

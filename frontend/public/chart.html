@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nifty 50 Real-Time Chart - TradingView</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0b0d;
+            color: white;
+            overflow: hidden;
+        }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            padding: 12px 20px;
+            background: #1e222d;
+            border-bottom: 1px solid #2a2e39;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+            color: #fff;
+        }
+        .symbol-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .symbol-badge {
+            background: #2962ff;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .live-price {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #2a2e39;
+            padding: 8px 20px;
+            border-radius: 30px;
+        }
+        .price {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .change {
+            font-size: 16px;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .positive {
+            background: rgba(38, 166, 154, 0.2);
+            color: #26a69a;
+        }
+        .negative {
+            background: rgba(239, 83, 80, 0.2);
+            color: #ef5350;
+        }
+        .update-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #8a8f9d;
+        }
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #26a69a;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .chart-container {
+            flex: 1;
+            background: #131722;
+            position: relative;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        .control-btn {
+            background: #2a2e39;
+            border: 1px solid #3a3f4c;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        .control-btn:hover {
+            background: #3a3f4c;
+            border-color: #4a5060;
+        }
+        .market-stats {
+            background: #1e222d;
+            border-top: 1px solid #2a2e39;
+            padding: 15px 20px;
+            display: flex;
+            gap: 40px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #8a8f9d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .stat-sub {
+            font-size: 13px;
+        }
+        .tradingview-widget-container {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="logo">
+                <h1>NIFTY 50 REAL-TIME CHART</h1>
+                <span class="symbol-badge">NSE: NIFTY</span>
+            </div>
+            <div class="symbol-info">
+                <div class="live-price" id="livePriceContainer">
+                    <span class="price" id="price">22,345.60</span>
+                    <span class="change positive" id="change">+123.45 (0.56%)</span>
+                </div>
+                <div class="update-badge">
+                    <span class="live-dot"></span>
+                    <span id="updateTime">Updated just now</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <!-- TradingView Widget -->
+            <div class="tradingview-widget-container">
+                <div id="tradingview_chart"></div>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" onclick="toggleFullscreen()">
+                    ⛶ Fullscreen
+                </button>
+                <button class="control-btn" onclick="refreshData()">
+                    ⟲ Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="market-stats">
+            <div class="stat-item">
+                <span class="stat-label">OPEN</span>
+                <span class="stat-value" id="open">22,289.75</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">HIGH</span>
+                <span class="stat-value" id="high">22,398.30</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">LOW</span>
+                <span class="stat-value" id="low">22,245.20</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">VOLUME</span>
+                <span class="stat-value" id="volume">124.5M</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">52W HIGH</span>
+                <span class="stat-value">22,526.55</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">52W LOW</span>
+                <span class="stat-value">17,185.85</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TradingView Widget Configuration
+        function loadTradingViewWidget() {
+            if (window.TradingView) {
+                new window.TradingView.widget({
+                    // Container
+                    container_id: "tradingview_chart",
+                    
+                    // Symbol - Nifty 50
+                    symbol: "NSE:NIFTY",
+                    
+                    // Interval
+                    interval: "1",
+                    
+                    // Timezone
+                    timezone: "Asia/Kolkata",
+                    
+                    // Theme
+                    theme: "dark",
+                    
+                    // Style
+                    style: "1",
+                    
+                    // Dimensions
+                    width: "100%",
+                    height: "100%",
+                    
+                    // Locale
+                    locale: "in",
+                    
+                    // Toolbar
+                    toolbar_bg: "#1e222d",
+                    enable_publishing: false,
+                    hide_side_toolbar: false,
+                    allow_symbol_change: true,
+                    
+                    // Studies
+                    studies: [
+                        "Volume@tv-basicstudies",
+                        "RSI@tv-basicstudies",
+                        "MACD@tv-basicstudies"
+                    ],
+                    
+                    // Save/load
+                    save_image: false,
+                    
+                    // Auto-fit
+                    autosize: true,
+                    
+                    // Container styles
+                    container: {
+                        padding: '0',
+                        margin: '0'
+                    },
+                    
+                    // Loading
+                    loading_screen: {
+                        backgroundColor: "#131722",
+                        foregroundColor: "#2962ff"
+                    },
+                    
+                    // Overrides
+                    overrides: {
+                        "mainSeriesProperties.candleStyle.upColor": "#26a69a",
+                        "mainSeriesProperties.candleStyle.downColor": "#ef5350",
+                        "mainSeriesProperties.candleStyle.borderUpColor": "#26a69a",
+                        "mainSeriesProperties.candleStyle.borderDownColor": "#ef5350",
+                        "mainSeriesProperties.candleStyle.wickUpColor": "#26a69a",
+                        "mainSeriesProperties.candleStyle.wickDownColor": "#ef5350"
+                    }
+                });
+
+                // Start WebSocket for real-time price updates
+                startWebSocketConnection();
+            }
+        }
+
+        // WebSocket Connection for Real-time Data
+        function startWebSocketConnection() {
+            // Create WebSocket connection for Nifty data
+            // Using a public WebSocket service for demo
+            const ws = new WebSocket('wss://ws.finnhub.io?token=YOUR_API_KEY');
+            
+            // For demo purposes, simulate WebSocket with interval
+            // In production, replace with actual WebSocket connection
+            simulateRealTimeUpdates();
+        }
+
+        // Simulate real-time updates (Replace with actual WebSocket)
+        function simulateRealTimeUpdates() {
+            let lastPrice = 22345.60;
+            
+            setInterval(() => {
+                // Generate random price movement
+                const change = (Math.random() - 0.5) * 15;
+                lastPrice += change;
+                
+                // Update price display
+                updatePriceDisplay(lastPrice, change);
+                
+                // Update update time
+                const now = new Date();
+                document.getElementById('updateTime').textContent = 
+                    `Updated ${now.toLocaleTimeString('en-IN')}`;
+                    
+                // Update market stats
+                updateMarketStats(lastPrice);
+                
+            }, 1000); // Update every second
+        }
+
+        // Update price display
+        function updatePriceDisplay(price, change) {
+            const priceElement = document.getElementById('price');
+            const changeElement = document.getElementById('change');
+            const livePriceContainer = document.getElementById('livePriceContainer');
+            
+            priceElement.textContent = price.toFixed(2);
+            
+            const changePercent = ((change / (price - change)) * 100).toFixed(2);
+            const changeText = `${change > 0 ? '+' : ''}${change.toFixed(2)} (${changePercent}%)`;
+            
+            changeElement.textContent = changeText;
+            
+            // Update color
+            if (change > 0) {
+                changeElement.className = 'change positive';
+                livePriceContainer.className = 'live-price positive-border';
+            } else if (change < 0) {
+                changeElement.className = 'change negative';
+                livePriceContainer.className = 'live-price negative-border';
+            }
+        }
+
+        // Update market stats
+        function updateMarketStats(currentPrice) {
+            // Simulate high/low updates
+            const high = Math.max(currentPrice, parseFloat(document.getElementById('high').textContent.replace(',', '')));
+            const low = Math.min(currentPrice, parseFloat(document.getElementById('low').textContent.replace(',', '')));
+            
+            document.getElementById('high').textContent = high.toFixed(2);
+            document.getElementById('low').textContent = low.toFixed(2);
+            document.getElementById('open').textContent = (currentPrice - 55.85).toFixed(2);
+            
+            // Simulate volume
+            const volume = (Math.random() * 50 + 100).toFixed(1) + 'M';
+            document.getElementById('volume').textContent = volume;
+        }
+
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            location.reload();
+        }
+
+        // Load TradingView script
+        function loadTradingViewScript() {
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/tv.js';
+            script.async = true;
+            script.onload = loadTradingViewWidget;
+            document.head.appendChild(script);
+        }
+
+        // Initialize on page load
+        window.onload = loadTradingViewScript;
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (window.TradingView) {
+                // Chart will auto-resize with autosize: true
+            }
+        });
+
+        // Add some extra CSS for dynamic classes
+        const style = document.createElement('style');
+        style.textContent = `
+            .positive-border {
+                border: 1px solid #26a69a;
+            }
+            .negative-border {
+                border: 1px solid #ef5350;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

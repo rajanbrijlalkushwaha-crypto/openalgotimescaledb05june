@@ -1,0 +1,133 @@
+.heatmap-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0d0d1a;
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+.heatmap-header {
+  flex-shrink: 0;
+  padding: 12px 18px 8px;
+  background: #111124;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.heatmap-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.heatmap-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.heatmap-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.heatmap-update {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.heatmap-refresh {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #94a3b8;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.heatmap-refresh:hover {
+  background: rgba(255,255,255,0.13);
+  color: #e2e8f0;
+}
+
+/* Legend */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.legend-box {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+
+/* Sector filter */
+.heatmap-sectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.sector-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #94a3b8;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.sector-btn:hover {
+  background: rgba(255,111,0,0.15);
+  border-color: rgba(255,111,0,0.35);
+  color: #ff9c45;
+}
+
+.sector-btn.active {
+  background: rgba(255,111,0,0.22);
+  border-color: #ff6f00;
+  color: #ff9c45;
+}
+
+/* Canvas */
+.heatmap-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.heatmap-svg {
+  display: block;
+}
+
+.heatmap-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 14px;
+}

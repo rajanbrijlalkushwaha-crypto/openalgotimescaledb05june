@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://websocketapi.soc.ai.in/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

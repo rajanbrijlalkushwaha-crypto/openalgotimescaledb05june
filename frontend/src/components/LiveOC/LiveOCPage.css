@@ -1,0 +1,16 @@
+/* LiveOCPage — minimal overrides on top of global #optionTable styles */
+
+/* Keep the page from overflowing the viewport */
+.loc-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ATM strike extra highlight */
+.atm-strike {
+  outline: 2px solid #fff;
+  position: relative;
+  z-index: 1;
+}
