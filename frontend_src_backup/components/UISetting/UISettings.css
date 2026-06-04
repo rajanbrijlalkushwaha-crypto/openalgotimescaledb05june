@@ -1,0 +1,125 @@
+.ui-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.ui-settings-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 260px;
+  background: var(--panel-bg, #1a1a2e);
+  border-left: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+}
+
+.ui-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  color: var(--text-primary, #fff);
+}
+
+.ui-settings-close {
+  background: none;
+  border: none;
+  color: var(--text-muted, #888);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ui-settings-close:hover {
+  color: var(--text-primary, #fff);
+}
+
+.ui-settings-section {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.07));
+}
+
+.ui-settings-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted, #888);
+  margin-bottom: 12px;
+}
+
+/* Theme buttons */
+.ui-theme-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ui-theme-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.12));
+  background: transparent;
+  color: var(--text-muted, #888);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ui-theme-btn.active {
+  background: var(--accent, #ff6f00);
+  border-color: var(--accent, #ff6f00);
+  color: #fff;
+}
+
+/* Toggle rows */
+.ui-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-primary, #ddd);
+}
+
+.ui-toggle {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  border: none;
+  background: var(--border-color, rgba(255,255,255,0.15));
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.ui-toggle.on {
+  background: var(--accent, #ff6f00);
+}
+
+.ui-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.ui-toggle.on .ui-toggle-thumb {
+  transform: translateX(16px);
+}

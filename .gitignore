@@ -16,3 +16,8 @@ openalgo-server/db/
 openalgo-server/data/
 *.log
 /tmp/
+openalgo-server/.venv/
+openalgo-server/__pycache__/
+openalgo-server/*.pyc
+openalgo-server/log/
+openalgo-server/instance/

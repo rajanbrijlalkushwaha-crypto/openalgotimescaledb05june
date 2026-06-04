@@ -1,0 +1,544 @@
+.admp-page {
+  position: fixed;
+  top: 0;
+  left: 52px;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f5;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ── Header ── */
+.admp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 14px 24px;
+  border-bottom: 3px solid #ff6f00;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.admp-header-left  { display: flex; align-items: center; gap: 12px; }
+.admp-header-icon  { font-size: 26px; }
+.admp-header-title { font-size: 17px; font-weight: 900; color: #ff6f00; }
+.admp-header-sub   { font-size: 11px; color: #aaa; margin-top: 2px; }
+.admp-header-role  { display: flex; align-items: center; gap: 10px; }
+.admp-header-user  { font-size: 13px; color: #ccc; font-weight: 600; }
+
+.admp-role-badge-lg {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+/* ── Tab bar ── */
+.admp-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid #e8e8e8;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.admp-tab-btn {
+  padding: 12px 22px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+}
+.admp-tab-btn:hover { color: #ff6f00; background: #fff8f0; }
+.admp-tab-btn.active { color: #ff6f00; border-bottom-color: #ff6f00; background: #fff8f0; }
+
+/* ── Content ── */
+.admp-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 24px;
+}
+
+/* ── Tab container ── */
+.admp-tab { width: 100%; }
+
+.admp-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.admp-tab-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1a1a2e;
+}
+.admp-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Search ── */
+.admp-search {
+  padding: 7px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  min-width: 220px;
+}
+.admp-search:focus { border-color: #ff6f00; }
+
+/* ── Messages ── */
+.admp-msg       { font-size: 13px; font-weight: 700; color: #2e7d32; padding: 6px 0; }
+.admp-msg.error { color: #c62828; }
+.admp-loading   { color: #888; font-size: 13px; padding: 20px 0; }
+
+/* ── Buttons ── */
+.admp-btn {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.admp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.admp-btn-primary { background: #ff6f00; color: #fff; }
+.admp-btn-primary:hover:not(:disabled) { background: #e65100; }
+.admp-btn-outline { background: #fff; color: #333; border: 1.5px solid #ccc; }
+.admp-btn-outline:hover { border-color: #ff6f00; color: #ff6f00; }
+.admp-btn-success { background: #2e7d32; color: #fff; }
+.admp-btn-success:hover:not(:disabled) { background: #1b5e20; }
+.admp-btn-warn    { background: #e65100; color: #fff; }
+.admp-btn-warn:hover:not(:disabled) { background: #bf360c; }
+.admp-btn-sm { padding: 5px 10px; font-size: 11px; }
+.admp-btn-danger { background: #b71c1c; color: #fff; }
+.admp-btn-danger:hover:not(:disabled) { background: #8b0000; }
+
+/* ── User Table ── */
+.admp-table-wrap { overflow-x: auto; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+.admp-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13px;
+}
+.admp-table thead tr { background: #1a1a2e; }
+.admp-table th {
+  padding: 11px 12px;
+  text-align: left;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.admp-table tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.1s; }
+.admp-table tbody tr:hover { background: #fafafa; }
+.admp-table tbody tr:last-child { border-bottom: none; }
+.admp-table td { padding: 10px 12px; color: #111; vertical-align: middle; }
+.admp-row-suspended td { color: #999; }
+.admp-empty { text-align: center; color: #888; padding: 30px !important; }
+
+/* ── Avatar ── */
+.admp-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #1a1a2e;
+}
+img.admp-avatar { object-fit: cover; }
+.admp-avatar-init { background: #d0d8ff; }
+
+.admp-name  { font-weight: 700; min-width: 120px; }
+.admp-email { color: #444; min-width: 160px; }
+.admp-date  { color: #555; white-space: nowrap; }
+
+/* ── Role badge (member view) ── */
+.admp-role-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* ── Role select (admin view) ── */
+.admp-role-select {
+  padding: 4px 8px;
+  border: 1.5px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  outline: none;
+}
+.admp-role-select:focus { border-color: #ff6f00; }
+
+/* ── Status badge ── */
+.admp-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 900;
+}
+.admp-status.active    { background: #e8f5e9; color: #1b5e20; }
+.admp-status.suspended { background: #fbe9e7; color: #b71c1c; }
+
+/* ── Section title & label ── */
+.admp-section-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #1a1a2e;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 0;
+}
+.admp-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+}
+
+/* ── Card (generic white card) ── */
+.admp-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ── Form grid ── */
+.admp-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.admp-form-grid-full { grid-column: 1 / -1; }
+
+/* ── msg overrides for subscription tabs ── */
+.admp-msg.success { color: #1b5e20; }
+
+/* ── System Tab ── */
+.admp-sys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.admp-sys-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admp-sys-label { font-size: 12px; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+.admp-sys-val   { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 900; color: #111; }
+.admp-sys-meta  { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555; }
+.admp-sys-btns  { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.admp-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.admp-dot.green { background: #2e7d32; }
+.admp-dot.red   { background: #c62828; }
+
+/* ── Token form ── */
+.admp-token-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admp-input {
+  padding: 8px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  flex: 1;
+  min-width: 200px;
+}
+.admp-input:focus { border-color: #ff6f00; }
+.admp-input-time { min-width: unset; width: 130px; flex: unset; }
+
+/* ── Schedule Tab ── */
+.admp-sched-body { display: flex; flex-direction: column; gap: 20px; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+.admp-sched-section { display: flex; flex-direction: column; gap: 10px; }
+.admp-sched-label { font-size: 12px; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+.admp-days-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.admp-day-btn {
+  padding: 7px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #f5f5f5;
+  font-size: 12px;
+  font-weight: 800;
+  color: #444;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.admp-day-btn.active { background: #fff3e0; border-color: #ff6f00; color: #e65100; }
+.admp-time-row { display: flex; gap: 20px; flex-wrap: wrap; }
+.admp-time-row label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; color: #555; }
+
+/* ── Toggle pill ── */
+.admp-toggle-label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #444; }
+.admp-toggle-label input[type=checkbox] { display: none; }
+.admp-pill {
+  padding: 3px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 900;
+}
+.admp-pill.green { background: #e8f5e9; color: #1b5e20; }
+.admp-pill.red   { background: #fbe9e7; color: #b71c1c; }
+
+/* ── Logs Tab ── */
+.admp-log-box {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 12px;
+  height: 420px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+.admp-log-line { padding: 1px 0; color: #c9d1d9; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+.admp-log-line.err { color: #ff7b72; }
+.admp-log-line.ok  { color: #56d364; }
+.admp-log-empty    { color: #6e7681; }
+
+/* ── Token login ── */
+.admp-token-login {
+  background: #fff;
+  border-radius: 10px;
+  padding: 32px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 400px;
+}
+.admp-token-login-title { font-size: 15px; font-weight: 900; color: #1a1a2e; }
+.admp-token-login-sub   { font-size: 13px; color: #666; }
+
+/* ── Team Tab ── */
+.admp-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+.admp-field label { font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+.admp-field .admp-input { min-width: unset; }
+
+.admp-count {
+  display: inline-block;
+  font-size: 11px;
+  background: #f0f0f0;
+  color: #555;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 8px;
+}
+
+.admp-inline-msg { font-size: 13px; font-weight: 700; }
+.admp-inline-msg.ok  { color: #2e7d32; }
+.admp-inline-msg.err { color: #c62828; }
+
+/* ── Team form ── */
+.team-form {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  flex-wrap: wrap;
+}
+.team-form-photo-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.team-form-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2.5px solid #ff6f00;
+  background: #e8e8e8;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.team-form-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.team-form-avatar-init { font-size: 24px; font-weight: 900; color: #1a1a2e; }
+.team-form-avatar-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; opacity: 0; transition: opacity 0.15s;
+}
+.team-form-avatar:hover .team-form-avatar-overlay { opacity: 1; }
+.team-form-photo-hint { font-size: 10px; color: #aaa; font-weight: 600; }
+
+.team-form-fields { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 240px; }
+.team-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.team-form-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+/* ── Team cards grid ── */
+.team-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) { .team-cards-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 860px)  { .team-cards-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px)  { .team-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.team-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 18px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.team-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.team-card.editing { border-color: #ff6f00; }
+
+.team-card-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid #ff6f00;
+  background: #d0d8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 4px;
+}
+.team-card-avatar-img  { width: 100%; height: 100%; object-fit: cover; }
+.team-card-avatar-init { font-size: 22px; font-weight: 900; color: #1a1a2e; }
+
+.team-card-name  { font-size: 13px; font-weight: 900; color: #1a1a2e; line-height: 1.3; }
+.team-card-desig { font-size: 11px; color: #555; font-weight: 600; }
+.team-card-exp   { font-size: 10px; color: #888; font-weight: 700; }
+
+.team-card-actions { display: flex; gap: 6px; margin-top: 6px; }
+.team-card-edit-btn {
+  background: #fff3e0; border: none; color: #e65100;
+  font-size: 11px; font-weight: 800; padding: 4px 10px;
+  border-radius: 6px; cursor: pointer; transition: background 0.1s;
+}
+.team-card-edit-btn:hover { background: #ffe0b2; }
+.team-card-del-btn {
+  background: none; border: none; color: #bbb;
+  font-size: 13px; padding: 4px 7px; border-radius: 6px; cursor: pointer; transition: all 0.1s;
+}
+.team-card-del-btn:hover { color: #c62828; background: #fbe9e7; }
+
+/* ── Notifications Tab ── */
+.notif-form {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.notif-textarea {
+  padding: 9px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.15s;
+}
+.notif-textarea:focus { border-color: #ff6f00; }
+.notif-attach-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.notif-clear-file { background: none; border: none; color: #bbb; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+.notif-clear-file:hover { color: #c62828; }
+.notif-admin-list { display: flex; flex-direction: column; gap: 10px; }
+.notif-admin-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-left: 4px solid #ff6f00;
+}
+.notif-admin-item-main { flex: 1; min-width: 0; }
+.notif-admin-title { font-size: 14px; font-weight: 900; color: #1a1a2e; margin-bottom: 4px; }
+.notif-admin-msg   { font-size: 13px; color: #444; white-space: pre-wrap; margin-bottom: 6px; }
+.notif-admin-meta  { font-size: 11px; color: #999; display: flex; align-items: center; gap: 10px; }
+.notif-admin-badge { background: #f0f0f0; color: #555; padding: 2px 8px; border-radius: 8px; font-weight: 700; font-size: 10px; }
+
+@media (max-width: 600px) {
+  .admp-header { padding: 10px 12px; }
+  .admp-header-title { font-size: 15px; }
+  .admp-header-user { display: none; }
+  .admp-content { padding: 12px 10px; }
+  .admp-tab-btn { padding: 10px 14px; font-size: 12px; }
+  .admp-search { min-width: unset; width: 100%; box-sizing: border-box; }
+  .admp-tab-actions { width: 100%; }
+  .admp-input-time { width: 100%; flex: 1; min-width: unset; }
+  .admp-sys-grid { grid-template-columns: 1fr; }
+  .admp-time-row { flex-direction: column; gap: 10px; }
+  .team-form { flex-direction: column; align-items: center; }
+  .team-form-fields { min-width: unset; width: 100%; }
+  .admp-token-login { padding: 20px 16px; }
+  .notif-form { padding: 14px; }
+  .admp-log-box { height: 280px; font-size: 11px; }
+}
+
+@media (max-width: 900px) and (min-width: 601px) {
+  .admp-sys-grid { grid-template-columns: repeat(2, 1fr); }
+}

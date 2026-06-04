@@ -1,0 +1,191 @@
+/* ── Reset global table styles inside lightweight-charts wrapper ── */
+.tv-lightweight-charts table {
+  width: auto !important;
+  min-width: unset !important;
+  border-collapse: separate !important;
+  table-layout: auto !important;
+  border: none !important;
+  background: transparent !important;
+}
+.tv-lightweight-charts td,
+.tv-lightweight-charts th {
+  border: none !important;
+  padding: 0 !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  white-space: normal !important;
+  line-height: normal !important;
+  position: static !important;
+  text-align: left !important;
+}
+
+.sc-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border-left: 1px solid #ddd;
+  overflow: hidden;
+  padding-bottom: 36px; /* keep time axis above fixed disclaimer bar */
+  box-sizing: border-box;
+}
+
+/* ── Toolbar ── */
+.sc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  color: #222;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  min-height: 46px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+.sc-toolbar-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ff6f00;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+/* TF dropdown */
+.sc-tf-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.sc-overlay-btns {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.sc-overlay-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid var(--btn-color, #888);
+  background: #f5f5f5;
+  color: var(--btn-color, #555);
+  transition: all 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.sc-overlay-btn.active {
+  background: var(--btn-color, #888);
+  color: #fff;
+}
+.sc-overlay-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.sc-ai-badge {
+  font-size: 10px;
+  font-weight: 900;
+}
+.sc-live-btn {
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid #26a69a;
+  background: #26a69a;
+  color: #fff;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Legend ── */
+.sc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 4px 10px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #eee;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  min-height: 38px;
+  align-items: center;
+  box-sizing: border-box;
+}
+.sc-leg-item { white-space: nowrap; }
+
+/* ── Chart area ── */
+.sc-chart-area {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.sc-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #888;
+  background: rgba(255,255,255,0.85);
+  z-index: 2;
+}
+.sc-state-warn { color: #b45a00; }
+.sc-state-err  { color: #c00; }
+
+/* ── Vertical Pre-Market / Market separator ── */
+.sc-vline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #1976d2;
+  pointer-events: none;
+  z-index: 3;
+  display: none;
+}
+.sc-vline-pre {
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  background: #607d8b;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.sc-vline-mkt {
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  background: #1976d2;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}

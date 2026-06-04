@@ -1,0 +1,247 @@
+.fiidii-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #1e293b;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.fiidii-header {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 20px 28px 16px;
+  flex-shrink: 0;
+}
+
+.fiidii-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fiidii-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.fiidii-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.fiidii-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.fiidii-update {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.fiidii-refresh-btn {
+  padding: 7px 18px;
+  background: #1e40af;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fiidii-refresh-btn:hover:not(:disabled) { background: #1d3a9e; }
+.fiidii-refresh-btn:disabled { opacity: 0.6; cursor: default; }
+
+.fiidii-download-btn {
+  padding: 7px 18px;
+  background: #15803d;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fiidii-download-btn:hover:not(:disabled) { background: #166534; }
+.fiidii-download-btn:disabled { opacity: 0.6; cursor: default; }
+
+.fiidii-status {
+  font-size: 12px;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────── */
+.fiidii-body {
+  flex: 1;
+  padding: 24px 28px;
+}
+
+.fiidii-loading,
+.fiidii-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #94a3b8;
+  font-size: 15px;
+  gap: 8px;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────── */
+.fiidii-table-wrap {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.fiidii-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 760px;
+}
+
+/* Group headers */
+.fiidii-th-date {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 14px 20px;
+  border-bottom: 2px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.fiidii-th-group {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  letter-spacing: 0.2px;
+}
+
+.fii-group {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-right: 2px solid #bfdbfe;
+}
+
+.dii-group {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.fiidii-th-sub {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fiidii-th-sub:nth-child(4) { border-right: 2px solid #e2e8f0; }
+
+/* Data rows */
+tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+
+tbody tr:hover { background: #f8fafc; }
+.fiidii-row-alt { background: #fafbfc; }
+
+.fiidii-date {
+  padding: 13px 20px;
+  color: #334155;
+  font-weight: 600;
+  font-size: 13.5px;
+  border-right: 1px solid #e2e8f0;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.fiidii-num {
+  padding: 13px 18px;
+  text-align: right;
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+}
+
+.fiidii-net {
+  padding: 13px 18px;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* After FII net col, add separator */
+.fiidii-net:first-of-type { border-right: 2px solid #e2e8f0; }
+td.fiidii-num:nth-child(4),
+td.fiidii-net:nth-child(4) { border-right: 2px solid #e2e8f0; }
+
+.fiidii-net.pos { color: #16a34a; }
+.fiidii-net.neg { color: #dc2626; }
+
+/* ── Pagination ─────────────────────────────────────────────────────── */
+.fiidii-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.fiidii-page-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fiidii-page-btn:hover { background: #f1f5f9; }
+.fiidii-page-btn.active {
+  background: #1e40af;
+  color: #fff;
+  border-color: #1e40af;
+}
+
+/* Dark theme support */
+body.black-theme .fiidii-page   { background: #0f0f1a; color: #e2e8f0; }
+body.black-theme .fiidii-header { background: #111124; border-color: rgba(255,255,255,0.08); }
+body.black-theme .fiidii-title  { color: #f1f5f9; }
+body.black-theme .fiidii-table-wrap { background: #1a1a2e; border-color: rgba(255,255,255,0.08); }
+body.black-theme .fiidii-th-date,
+body.black-theme .fiidii-th-sub { background: #111124; color: #94a3b8; border-color: rgba(255,255,255,0.08); }
+body.black-theme .fii-group     { background: rgba(29,78,216,0.15); color: #93c5fd; }
+body.black-theme .dii-group     { background: rgba(21,128,61,0.15); color: #86efac; }
+body.black-theme tbody tr       { border-color: rgba(255,255,255,0.05); }
+body.black-theme tbody tr:hover { background: rgba(255,255,255,0.03); }
+body.black-theme .fiidii-date,
+body.black-theme .fiidii-num    { color: #cbd5e1; }
+body.black-theme .fiidii-row-alt { background: rgba(255,255,255,0.02); }
