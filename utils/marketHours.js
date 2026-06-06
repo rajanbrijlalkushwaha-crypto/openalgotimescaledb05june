@@ -24,17 +24,13 @@ const hm = (h, m) => h * 60 + m;
 // Sessions per exchange [{ name, start, end }] — in IST minutes
 const SESSIONS = {
   NSE: [
-    { name: 'premarket',  start: hm(9,  0), end: hm(9,  8) },
-    { name: 'main',       start: hm(9, 15), end: hm(15,30) },
-    { name: 'postmarket', start: hm(15,30), end: hm(15,35) },
+    { name: 'main', start: hm(9,  0), end: hm(15, 35) },
   ],
   BFO: [
-    { name: 'premarket',  start: hm(9,  0), end: hm(9,  8) },
-    { name: 'main',       start: hm(9, 15), end: hm(15,30) },
-    { name: 'postmarket', start: hm(15,30), end: hm(15,35) },
+    { name: 'main', start: hm(9,  0), end: hm(15, 35) },
   ],
   MCX: [
-    { name: 'main', start: hm(9, 0), end: hm(23,30) },
+    { name: 'main', start: hm(9, 0), end: hm(23, 30) },
   ],
 };
 
