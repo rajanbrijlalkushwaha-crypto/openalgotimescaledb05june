@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "1.0.0",
   "private": true,
+  "homepage": "/chain",
   "dependencies": {
     "axios": "^1.13.6",
     "lightweight-charts": "^5.1.0",

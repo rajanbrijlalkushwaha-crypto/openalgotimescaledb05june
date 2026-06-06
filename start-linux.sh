@@ -37,6 +37,14 @@ echo "      TimescaleDB ready ✓"
 
 # ── 2. OpenAlgo ───────────────────────────────────────────────────
 echo "[2/4] Starting OpenAlgo..."
+
+# Auto-create openalgo-server/.env from sample if missing
+if [ ! -f "$ROOT/openalgo-server/.env" ]; then
+  echo "      openalgo-server/.env missing — copying from .sample.env"
+  cp "$ROOT/openalgo-server/.sample.env" "$ROOT/openalgo-server/.env"
+  echo "      ⚠ Edit openalgo-server/.env and add your broker API key + secret"
+fi
+
 cd "$ROOT/openalgo-server"
 docker compose up -d
 cd "$ROOT"
