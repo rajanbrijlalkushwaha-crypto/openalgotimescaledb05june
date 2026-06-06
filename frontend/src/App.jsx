@@ -150,7 +150,8 @@ function AppInner() {
     if (socket?.connected) {
       socket.emit('load', { symbol, expiry, segment });
     } else {
-      fetch(`/api/chain/${symbol}/${expiry}`)
+      const apiBase = process.env.REACT_APP_API_BASE || '';
+      fetch(`${apiBase}/api/chain/${symbol}/${expiry}`)
         .then(r => r.json())
         .then(d => {
           if (d.data?.strikes) push(mapChain(d.data.strikes), d.data.underlying_ltp, expiry, [], 25);

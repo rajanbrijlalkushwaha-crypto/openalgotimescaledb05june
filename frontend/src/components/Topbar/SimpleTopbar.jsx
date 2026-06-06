@@ -39,7 +39,8 @@ export default function SimpleTopbar({ onLoad, wsLive, futures = {}, currentSymb
 
   // Load all underlyings from server
   useEffect(() => {
-    fetch('/api/underlyings')
+    const apiBase = process.env.REACT_APP_API_BASE || '';
+    fetch(`${apiBase}/api/underlyings`)
       .then(r => r.json())
       .then(d => { if (d.data) setUnderlyings(d.data); })
       .catch(() => {});
@@ -92,7 +93,8 @@ export default function SimpleTopbar({ onLoad, wsLive, futures = {}, currentSymb
     setExpiries([]);
     setExpiry('');
     try {
-      const r = await fetch(`/api/expiries/${seg}/${encodeURIComponent(sym)}`);
+      const apiBase = process.env.REACT_APP_API_BASE || '';
+      const r = await fetch(`${apiBase}/api/expiries/${seg}/${encodeURIComponent(sym)}`);
       const d = await r.json();
       if (d.status === 'error') { alert(`Cannot load ${sym}: ${d.message}`); return; }
       const list = d.data || [];
