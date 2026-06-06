@@ -1,74 +1,67 @@
 /**
- * hooks/useOptionChainWS.js
+ * useOptionChainWS(symbol)
  *
- * React hook — subscribes to a symbol via the shared singleton WS client
- * and returns live option chain data.
+ * Subscribes to live option chain data via Socket.IO.
  *
- * Usage:
- *   const { data, connected, error } = useOptionChainWS('NIFTY');
- *
- * Behaviour:
- *   - Uses the singleton wsClient — one persistent connection shared across the app.
- *   - On symbol change: unsubscribes old, subscribes new.
- *   - On FULL message: replaces entire chain state.
- *   - On DIFF message: merges only changed fields — minimal re-render.
- *   - Reconnection + heartbeat are handled by wsClient automatically.
+ * - Emits 'subscribe_chain' on mount and after every reconnect.
+ * - Receives 'chain_update' for full snapshots, 'tick' for live updates.
+ * - Patches individual strike rows in-place on each tick (no full re-render).
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import wsClient from '../services/wsClient';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import sioClient from '../services/socketioClient';
 
 export function useOptionChainWS(symbol) {
   const [data,      setData]      = useState(null);
-  const [connected, setConnected] = useState(wsClient.connected);
+  const [connected, setConnected] = useState(sioClient.connected);
   const [error,     setError]     = useState(null);
 
-  // Track connection state from singleton
-  useEffect(() => wsClient.onConnectionChange(c => setConnected(c)), []);
+  // Kept in a ref so reconnect handler always sees the latest symbol
+  const symbolRef = useRef(symbol);
+  useEffect(() => { symbolRef.current = symbol; }, [symbol]);
 
-  // Merge diff patch into existing snapshot — avoids full re-render
-  const applyDiff = useCallback((diff) => {
+  // Apply a live tick to the in-memory chain snapshot
+  const applyTick = useCallback((tick) => {
+    if (!tick?.strike || !tick?.side) return;
+
     setData(prev => {
-      if (!prev) return prev; // no baseline yet — wait for FULL
-
+      if (!prev) return prev;
       const next = { ...prev };
 
-      if (diff.spot_price         !== undefined) next.spot_price         = diff.spot_price;
-      if (diff.spot_prev_close    !== undefined) next.spot_prev_close    = diff.spot_prev_close;
-      if (diff.spot_change        !== undefined) next.spot_change        = diff.spot_change;
-      if (diff.spot_pct_change    !== undefined) next.spot_pct_change    = diff.spot_pct_change;
-      if (diff.futures_ltp        !== undefined) next.futures_ltp        = diff.futures_ltp;
-      if (diff.futures_prev_close !== undefined) next.futures_prev_close = diff.futures_prev_close;
-      if (diff.futures_change     !== undefined) next.futures_change     = diff.futures_change;
-      if (diff.futures_pct_change !== undefined) next.futures_pct_change = diff.futures_pct_change;
-      if (diff.time               !== undefined) next.time               = diff.time;
-      if (diff.expiry             !== undefined) next.expiry             = diff.expiry;
-      if (diff.date               !== undefined) next.date               = diff.date;
-      if (diff.nextExpiry         !== undefined) next.nextExpiry         = diff.nextExpiry;
-
-      if (diff.chains)            next.chains            = { ...(prev.chains || {}), ...diff.chains };
-      if (diff.availableExpiries) next.availableExpiries = diff.availableExpiries;
-
-      if (diff.chain) {
-        const chainMap = {};
-        for (const row of (prev.chain || [])) chainMap[row.strike] = row;
-
-        for (const [strike, changes] of Object.entries(diff.chain)) {
-          const s = Number(strike);
-          chainMap[s] = !chainMap[s]
-            ? changes
-            : {
-                ...chainMap[s],
-                call: changes.call ? { ...chainMap[s].call, ...changes.call } : chainMap[s].call,
-                put:  changes.put  ? { ...chainMap[s].put,  ...changes.put  } : chainMap[s].put,
-              };
-        }
-
-        next.chain = Object.values(chainMap).sort((a, b) => a.strike - b.strike);
+      if (tick.side === 'spot') {
+        next.underlying_ltp = tick.ltp;
+        return next;
       }
 
+      next.strikes = (prev.strikes || []).map(row => {
+        if (row.strike !== tick.strike) return row;
+        const side = tick.side;
+        if (!row[side]) return row;
+        return {
+          ...row,
+          [side]: {
+            ...row[side],
+            ltp:     tick.ltp     ?? row[side].ltp,
+            ltp_chg: tick.ltp_chg ?? row[side].ltp_chg,
+            oi:      tick.oi      ?? row[side].oi,
+            oi_chg:  tick.oi_chg  ?? row[side].oi_chg,
+            volume:  tick.volume  ?? row[side].volume,
+            iv:      tick.iv      ?? row[side].iv,
+            delta:   tick.delta   ?? row[side].delta,
+            gamma:   tick.gamma   ?? row[side].gamma,
+            theta:   tick.theta   ?? row[side].theta,
+            vega:    tick.vega    ?? row[side].vega,
+          },
+        };
+      });
       return next;
     });
+  }, []);
+
+  // Subscribe / re-subscribe helper
+  const doSubscribe = useCallback((sym) => {
+    if (!sym || !sioClient.socket) return;
+    sioClient.socket.emit('subscribe_chain', { underlying: sym });
   }, []);
 
   useEffect(() => {
@@ -77,21 +70,47 @@ export function useOptionChainWS(symbol) {
       return;
     }
 
-    setData(null); // clear stale data when symbol changes
+    setData(null);
+    setError(null);
 
-    const unsub = wsClient.subscribe(symbol, ({ type, data: d }) => {
-      if (type === 'full') {
-        setData(d);
+    // Handlers for this symbol — defined here so we can remove them on cleanup
+    const onChainUpdate = (msg) => {
+      if (msg?.symbol === symbol || msg?.underlying === symbol) {
+        setData(msg.data || msg);
         setError(null);
-      } else if (type === 'diff') {
-        applyDiff(d);
-      } else if (type === 'error') {
-        setError(d?.message || 'Unknown error');
       }
+    };
+
+    const onTick = (tick) => {
+      if (tick?.underlying === symbol) applyTick(tick);
+    };
+
+    const onError = (msg) => {
+      if (msg?.symbol === symbol || !msg?.symbol) setError(msg?.message || 'Unknown error');
+    };
+
+    // Register listeners
+    sioClient.socket?.on('chain_update', onChainUpdate);
+    sioClient.socket?.on('tick', onTick);
+    sioClient.socket?.on('error', onError);
+
+    // Subscribe now (queued by Socket.IO if not yet connected)
+    doSubscribe(symbol);
+
+    // Re-subscribe every time we reconnect — server loses socket state on disconnect
+    const unsubConn = sioClient.onConnectionChange((isConnected) => {
+      setConnected(isConnected);
+      if (isConnected) doSubscribe(symbolRef.current);
     });
 
-    return unsub;
-  }, [symbol, applyDiff]);
+    return () => {
+      sioClient.socket?.emit('unsubscribe_chain', { underlying: symbol });
+      sioClient.socket?.off('chain_update', onChainUpdate);
+      sioClient.socket?.off('tick', onTick);
+      sioClient.socket?.off('error', onError);
+      unsubConn();
+    };
+  }, [symbol, applyTick, doSubscribe]);
 
   return { data, connected, error };
 }

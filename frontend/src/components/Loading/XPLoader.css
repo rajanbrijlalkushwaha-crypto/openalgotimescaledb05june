@@ -1,0 +1,85 @@
+/* Windows XP boot-screen style loader */
+
+.xp-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.xp-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Logo */
+.xp-logo {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  user-select: none;
+}
+.xp-logo-soc  { color: #00aaff; }
+.xp-logo-tick { color: #ffffff; }
+.xp-logo-data { color: #f18713; }
+
+/* Text */
+.xp-text {
+  color: #cccccc;
+  font-size: 0.95rem;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+/* XP progress bar container */
+.xp-bar-wrap {
+  width: 220px;
+  height: 18px;
+  border: 1px solid #444;
+  background: #111;
+  border-radius: 2px;
+  padding: 2px;
+  box-shadow: inset 0 0 6px #000;
+}
+
+.xp-bar {
+  display: flex;
+  gap: 3px;
+  height: 100%;
+  align-items: center;
+}
+
+/* Each green segment */
+.xp-seg {
+  width: 13px;
+  height: 100%;
+  background: #3cb53c;
+  border-radius: 1px;
+  opacity: 0;
+  animation: xp-sweep 1.44s infinite ease-in-out;
+  box-shadow: 0 0 4px #3cb53c88;
+}
+
+@keyframes xp-sweep {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; background: #5edd5e; }
+  40%  { opacity: 1; background: #3cb53c; }
+  70%  { opacity: 0.2; }
+  100% { opacity: 0; }
+}
+
+.xp-sub {
+  color: #555;
+  font-size: 0.78rem;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}

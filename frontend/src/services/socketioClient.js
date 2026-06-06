@@ -1,5 +1,10 @@
 /**
- * Socket.io singleton client for tick pipeline (port 5900)
+ * socketioClient.js
+ * Socket.IO singleton — one connection shared by all components.
+ *
+ * Matches the server (server.js) Socket.IO event protocol:
+ *   Client → Server: 'subscribe' { symbol }, 'unsubscribe' { symbol }
+ *   Server → Client: 'tick' { symbol, ... }
  *
  * Usage:
  *   import sioClient from './socketioClient';
@@ -11,15 +16,17 @@ import { io } from 'socket.io-client';
 
 const SIO_URL =
   process.env.REACT_APP_PIPELINE_URL ||
-  process.env.REACT_APP_API_URL?.replace('5800', '5900') ||
-  'http://127.0.0.1:5900';
+  (process.env.REACT_APP_API_URL
+    ? process.env.REACT_APP_API_URL.replace(/:\d+$/, ':3001')
+    : null) ||
+  `${window.location.protocol}//${window.location.hostname}:3001`;
 
 class SIOClient {
   constructor() {
-    this.socket     = null;
-    this.handlers   = new Map();   // symbol → Set<fn(tick)>
-    this.connected  = false;
-    this._connCbs   = new Set();
+    this.socket    = null;
+    this.handlers  = new Map();  // symbol → Set<fn(tick)>
+    this.connected = false;
+    this._connCbs  = new Set();
   }
 
   connect() {
@@ -35,9 +42,12 @@ class SIOClient {
     this.socket.on('connect', () => {
       this.connected = true;
       this._connCbs.forEach(fn => fn(true));
-      // Re-subscribe all active symbols after reconnect
+
+      // Re-subscribe all active tick subscriptions after reconnect
       if (this.handlers.size > 0) {
-        this.socket.emit('subscribe', { symbols: [...this.handlers.keys()] });
+        for (const symbol of this.handlers.keys()) {
+          this.socket.emit('subscribe', { symbol });
+        }
       }
     });
 
@@ -46,14 +56,27 @@ class SIOClient {
       this._connCbs.forEach(fn => fn(false));
     });
 
+    // Route incoming ticks to registered handlers by symbol
     this.socket.on('tick', (tick) => {
-      const sym = tick?.symbol;
+      const sym = tick?.symbol || tick?.underlying;
       if (!sym) return;
-      const set = this.handlers.get(sym);
-      if (set) set.forEach(fn => { try { fn(tick); } catch (_) {} });
+
+      // Exact symbol match (e.g. an option contract)
+      const exactSet = this.handlers.get(sym);
+      if (exactSet) exactSet.forEach(fn => { try { fn(tick); } catch (_) {} });
+
+      // Also route to underlying symbol handlers (e.g. 'NIFTY' gets spot ticks)
+      if (tick?.underlying && tick.underlying !== sym) {
+        const undSet = this.handlers.get(tick.underlying);
+        if (undSet) undSet.forEach(fn => { try { fn(tick); } catch (_) {} });
+      }
     });
   }
 
+  /**
+   * Subscribe to ticks for a symbol.
+   * Returns an unsubscribe function.
+   */
   subscribe(symbol, handler) {
     if (!this.handlers.has(symbol)) {
       this.handlers.set(symbol, new Set());

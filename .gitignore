@@ -8,6 +8,7 @@ data/
 .DS_Store
 frontend/build/
 frontend/node_modules/
+logs/*.log
 openalgo-server/__pycache__/
 openalgo-server/*.pyc
 openalgo-server/.venv/

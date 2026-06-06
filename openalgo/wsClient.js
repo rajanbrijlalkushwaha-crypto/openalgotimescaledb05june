@@ -59,21 +59,29 @@ class OpenAlgoWSClient {
       }
 
       // Handle market data tick
+      // OpenAlgo WS proxy sends: { type:"market_data", symbol, exchange, mode, data:{...} }
+      // symbol/exchange are at the top level of the message, not inside data.topic
       if (msg.type === 'market_data' && msg.data) {
-        const [symbol, exchange] = (msg.topic || '').split('.');
         this.onTick({
-          symbol:    symbol     || msg.data.symbol    || '',
-          exchange:  exchange   || msg.data.exchange  || '',
-          ltp:       msg.data.ltp       ?? null,
-          bid:       msg.data.bid       ?? null,
-          ask:       msg.data.ask       ?? null,
-          open:      msg.data.open      ?? null,
-          high:      msg.data.high      ?? null,
-          low:       msg.data.low       ?? null,
-          close:     msg.data.close     ?? null,
-          volume:    msg.data.volume    ?? null,
-          oi:        msg.data.oi        ?? null,
-          timestamp: msg.data.timestamp ?? Date.now(),
+          symbol:    msg.symbol   || msg.data.symbol   || '',
+          exchange:  msg.exchange || msg.data.exchange || '',
+          ltp:       msg.data.ltp        ?? null,
+          prev_close:msg.data.prev_close ?? msg.data.cp ?? null,
+          bid:       msg.data.bid        ?? null,
+          ask:       msg.data.ask        ?? null,
+          open:      msg.data.open       ?? null,
+          high:      msg.data.high       ?? null,
+          low:       msg.data.low        ?? null,
+          close:     msg.data.close      ?? null,
+          volume:    msg.data.volume     ?? null,
+          oi:        msg.data.oi         ?? null,
+          iv:        msg.data.iv         ?? null,
+          delta:     msg.data.delta      ?? null,
+          gamma:     msg.data.gamma      ?? null,
+          theta:     msg.data.theta      ?? null,
+          vega:      msg.data.vega       ?? null,
+          rho:       msg.data.rho        ?? null,
+          timestamp: msg.data.timestamp  ?? Date.now(),
         });
       }
     });

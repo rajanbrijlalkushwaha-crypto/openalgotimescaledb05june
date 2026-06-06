@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import './SimpleTopbar.css';
 
-const MCX_FALLBACK = [
-  'GOLD', 'SILVER', 'COPPER', 'ZINC', 'NATURALGAS', 'CRUDE OIL', 'MCXBULLDEX',
-];
+// Fallback symbols — shown even when broker not connected yet
+const NSE_IDX_FALLBACK = ['NIFTY', 'BANKNIFTY', 'FINNIFTY', 'MIDCPNIFTY', 'NIFTYNXT50'];
+const BSE_IDX_FALLBACK = ['SENSEX', 'BANKEX'];
+const MCX_FALLBACK     = ['GOLD', 'SILVER', 'COPPER', 'ZINC', 'NATURALGAS', 'CRUDEOIL'];
 
-const NSE_INDICES = ['NIFTY', 'BANKNIFTY', 'FINNIFTY', 'MIDCPNIFTY', 'NIFTYNXT50', 'NIFTY100'];
-const BSE_INDICES = ['SENSEX', 'BANKEX', 'SENSEX50'];
+const NSE_INDICES = new Set(NSE_IDX_FALLBACK);
+const BSE_INDICES = new Set(BSE_IDX_FALLBACK);
 
-// 4 display groups in order
 const GROUPS = [
   { id: 'NSE_IDX', label: 'NSE Indices', color: '#2196f3' },
   { id: 'BSE_IDX', label: 'BSE Indices', color: '#4caf50' },
@@ -17,10 +17,10 @@ const GROUPS = [
   { id: 'MCX',     label: 'MCX',         color: '#ff9800' },
 ];
 
-export default function SimpleTopbar({ onLoad, wsLive }) {
-  const { state, dispatch } = useApp();
+export default function SimpleTopbar({ onLoad, wsLive, futures = {}, currentSymbol }) {
+  const { state } = useApp();
   const [underlyings, setUnderlyings] = useState({ NFO: [], BFO: [], MCX: [] });
-  const [selected,    setSelected]    = useState(null);   // { sym, seg }
+  const [selected,    setSelected]    = useState(null);
   const [expiries,    setExpiries]    = useState([]);
   const [expiry,      setExpiry]      = useState('');
   const [open,        setOpen]        = useState(false);
@@ -37,7 +37,7 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
     return () => clearInterval(id);
   }, []);
 
-  // Load underlyings
+  // Load all underlyings from server
   useEffect(() => {
     fetch('/api/underlyings')
       .then(r => r.json())
@@ -45,29 +45,31 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
       .catch(() => {});
   }, []);
 
-  // Close on outside click
+  // Close dropdown on outside click
   useEffect(() => {
-    const h = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    const h = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  // Focus search when dropdown opens
+  // Auto-focus search when dropdown opens
   useEffect(() => {
     if (open) setTimeout(() => searchRef.current?.focus(), 50);
     else setSearch('');
   }, [open]);
 
-  // Split NFO into indices + stocks; BFO into indices + stocks
-  const nfoAll  = underlyings.NFO?.length > 0 ? underlyings.NFO : [];
-  const bfoAll  = underlyings.BFO?.length > 0 ? underlyings.BFO : [];
+  // Build groups — use fallbacks if underlyings not loaded yet
+  const nfoAll  = underlyings.NFO?.length > 0 ? underlyings.NFO : NSE_IDX_FALLBACK;
+  const bfoAll  = underlyings.BFO?.length > 0 ? underlyings.BFO : BSE_IDX_FALLBACK;
   const mcxAll  = underlyings.MCX?.length > 0 ? underlyings.MCX : MCX_FALLBACK;
 
-  const nseIdx  = NSE_INDICES.filter(s => nfoAll.includes(s));
-  const bseIdx  = BSE_INDICES.filter(s => bfoAll.includes(s));
-  const nfoStks = nfoAll.filter(s => !NSE_INDICES.includes(s));
-  // bfoStks not needed — BSE only has indices
+  const nseIdx  = nfoAll.filter(s => NSE_INDICES.has(s));
+  const bseIdx  = bfoAll.filter(s => BSE_INDICES.has(s));
+  const nfoStks = nfoAll.filter(s => !NSE_INDICES.has(s));
 
+  const q = search.toLowerCase();
   const rawGroups = [
     { id: 'NSE_IDX', seg: 'NFO', items: nseIdx },
     { id: 'BSE_IDX', seg: 'BFO', items: bseIdx },
@@ -75,7 +77,6 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
     { id: 'MCX',     seg: 'MCX', items: mcxAll  },
   ];
 
-  const q = search.toLowerCase();
   const groups = rawGroups
     .map(g => ({
       ...g,
@@ -90,9 +91,6 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
     setSelected({ sym, seg, groupId });
     setExpiries([]);
     setExpiry('');
-    dispatch({ type: 'SET_CHAIN_DATA', payload: [] });
-    dispatch({ type: 'SET_CURRENT_SYMBOL', payload: '' });
-    dispatch({ type: 'SET_LOADING', payload: false });
     try {
       const r = await fetch(`/api/expiries/${seg}/${encodeURIComponent(sym)}`);
       const d = await r.json();
@@ -114,14 +112,18 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
     if (selected && exp) onLoad(selected.sym, exp, selected.seg);
   };
 
-  const spot     = state.currentSpot  || 0;
-  const expBadge = state.currentExpiry || '—';
+  const spot    = state.currentSpot  || 0;
+  const futData = futures[currentSymbol] || futures[state.currentSymbol];
   const symBadge = state.currentSymbol || '';
+  const expBadge = state.currentExpiry || '—';
+
+  const fmt = (n) => n ? n.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '—';
+  const isPos = (n) => (n ?? 0) >= 0;
 
   return (
     <div className="stb">
 
-      {/* Symbol dropdown button */}
+      {/* Symbol dropdown */}
       <div className="stb-sym-wrap" ref={wrapRef}>
         <button
           className={`stb-sym-btn${open ? ' open' : ''}`}
@@ -129,7 +131,8 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
         >
           {selected ? (
             <>
-              <span className="stb-sym-tag" style={{ background: GROUPS.find(g => g.id === selected.groupId)?.color || '#444' }}>
+              <span className="stb-sym-tag"
+                style={{ background: GROUPS.find(g => g.id === selected.groupId)?.color || '#444' }}>
                 {GROUPS.find(g => g.id === selected.groupId)?.label || selected.seg}
               </span>
               <span className="stb-sym-name">{selected.sym}</span>
@@ -142,7 +145,6 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
 
         {open && (
           <div className="stb-sym-drop">
-            {/* Search box inside dropdown */}
             <div className="stb-sym-search-wrap">
               <input
                 ref={searchRef}
@@ -157,8 +159,6 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
                 <button className="stb-sym-clear" onClick={() => setSearch('')}>✕</button>
               )}
             </div>
-
-            {/* Grouped list */}
             <div className="stb-sym-list">
               {groups.length === 0 ? (
                 <div className="stb-sym-empty">No symbols found</div>
@@ -173,7 +173,7 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
                       const isActive = selected?.sym === sym && selected?.groupId === id;
                       return (
                         <div
-                          key={`${seg}:${sym}`}
+                          key={`${id}:${sym}`}
                           className={`stb-sym-item${isActive ? ' active' : ''}`}
                           style={isActive ? { borderLeftColor: color, color } : {}}
                           onClick={() => pickSymbol(sym, seg, id)}
@@ -199,17 +199,32 @@ export default function SimpleTopbar({ onLoad, wsLive }) {
 
       <div className="stb-divider" />
 
-      {/* Active info badges */}
+      {/* Symbol + Expiry badges */}
       {symBadge && (
         <>
           <span className="stb-badge sym">{symBadge}</span>
           <span className="stb-badge exp">{expBadge}</span>
-          {spot > 0 && (
-            <span className="stb-badge spot">
-              ₹{spot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-            </span>
-          )}
         </>
+      )}
+
+      {/* Spot price badge */}
+      {spot > 0 && (
+        <span className="stb-badge spot">
+          <span className="stb-price-label">SPOT</span>
+          ₹{fmt(spot)}
+        </span>
+      )}
+
+      {/* Futures price badge — shown when futures data is available for current symbol */}
+      {futData?.ltp > 0 && (
+        <span className={`stb-badge fut ${isPos(futData.chg) ? 'up' : 'dn'}`}>
+          <span className="stb-price-label">FUT</span>
+          ₹{fmt(futData.ltp)}
+          <span className="stb-fut-chg">
+            {isPos(futData.chg) ? '+' : ''}{(futData.chg || 0).toFixed(2)}
+            &nbsp;({isPos(futData.pct) ? '+' : ''}{(futData.pct || 0).toFixed(2)}%)
+          </span>
+        </span>
       )}
 
       {/* WS status + time */}

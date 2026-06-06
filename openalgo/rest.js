@@ -5,6 +5,54 @@ function toOptionChainExpiry(expiry) {
   return expiry.replace(/-/g, '');
 }
 
+// Cache NFO/BFO instruments CSV (1 hour)
+let _nfoCache = null;
+let _bfoCache = null;
+
+async function getNFOInstruments(apiKey, baseUrl, seg = 'NFO') {
+  const cache = seg === 'BFO' ? _bfoCache : _nfoCache;
+  if (cache && Date.now() - cache.time < 3600000) return cache.csv;
+  const res = await axios.get(`${baseUrl}/api/v1/instruments`, {
+    params: { apikey: apiKey, exchange: seg, format: 'csv' }, timeout: 30000,
+  });
+  const entry = { csv: res.data, time: Date.now() };
+  if (seg === 'BFO') _bfoCache = entry; else _nfoCache = entry;
+  return res.data;
+}
+
+// Get nearest futures symbol for an NSE/BSE underlying (e.g. NIFTY → "NIFTY25JUN26FUT")
+async function getNearestFuturesSymbol(apiKey, baseUrl, underlying, seg = 'NFO') {
+  const csv = await getNFOInstruments(apiKey, baseUrl, seg);
+  const lines = csv.split('\n').filter(l => l.trim());
+  const headers = lines[0].split(',');
+  const symIdx  = headers.indexOf('symbol');
+  const typeIdx = headers.indexOf('instrumenttype');
+  const expIdx  = headers.indexOf('expiry');
+
+  const MON = { JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11 };
+  const parseExp = (e) => {
+    const p = e.split('-');
+    return p.length === 3 ? new Date(2000 + parseInt(p[2]), MON[p[1]], parseInt(p[0])).getTime() : 0;
+  };
+
+  const now = Date.now();
+  let nearest = null;
+  let nearestTs = Infinity;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const type = cols[typeIdx]?.trim();
+    const sym  = cols[symIdx]?.trim();
+    const exp  = cols[expIdx]?.trim();
+    if (type !== 'FUT' || !sym || !exp) continue;
+    const und = sym.match(/^([A-Z0-9&-]+?)\d{2}[A-Z]{3}\d{2}/)?.[1];
+    if (!und || und.toUpperCase() !== underlying.toUpperCase()) continue;
+    const ts = parseExp(exp);
+    if (ts >= now && ts < nearestTs) { nearestTs = ts; nearest = sym; }
+  }
+  return nearest; // e.g. "NIFTY25JUN26FUT"
+}
+
 // Extract underlying from option symbol: "HINDALCO30JUN261230CE" -> "HINDALCO"
 function extractUnderlying(symbol) {
   const m = symbol.match(/^([A-Z0-9&-]+?)(\d{2}[A-Z]{3}\d{2})/);
@@ -286,4 +334,4 @@ async function getMultiGreeks(apiKey, baseUrl, symbols, contractExchange) {
   return result;
 }
 
-module.exports = { getUnderlyings, getExpiries, getExpiriesForExchange, getMCXExpiries, getOptionChain, getMCXOptionChain, getMultiGreeks };
+module.exports = { getUnderlyings, getExpiries, getExpiriesForExchange, getMCXExpiries, getOptionChain, getMCXOptionChain, getMultiGreeks, getNearestFuturesSymbol };
