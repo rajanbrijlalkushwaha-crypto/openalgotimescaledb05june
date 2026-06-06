@@ -63,6 +63,7 @@ const state = {
 const app    = express();
 const server = http.createServer(app);
 const io     = new IOServer(server, {
+  path: '/chain/socket.io',
   cors: { origin: '*', methods: ['GET', 'POST'] },
   transports: ['websocket', 'polling'],
 });
