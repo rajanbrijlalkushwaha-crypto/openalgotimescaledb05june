@@ -285,8 +285,8 @@ async function loadChain(symbol, expiry, segment) {
   state.chain[symbol]         = state.chain[symbol] || {};
   state.chain[symbol][expiry] = chainData;
 
-  db.saveSnapshot(symbol, expiry, chainData);
-  subscribeChain(symbol, expiry, segment, chainData);
+  subscribeChain(symbol, expiry, segment, chainData); // computes Greeks into chainData first
+  db.saveSnapshot(symbol, expiry, chainData);         // now snapshot includes Greeks
   tickProducer.startSnapshotTimer(symbol, expiry, () => state.chain[symbol]?.[expiry]);
 
   broadcastChainUpdate(symbol, expiry, chainData);
