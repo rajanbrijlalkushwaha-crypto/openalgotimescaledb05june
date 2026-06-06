@@ -25,6 +25,16 @@ echo "════════════════════════�
 echo "  soctickdata — Linux deploy"
 echo "═══════════════════════════════════════════════"
 
+# ── 0. Protect .env ──────────────────────────────────────────────
+# .env is NOT tracked by git — git pull/reset never touches it.
+# Create it from .env.example on first deploy only.
+if [ ! -f "$ROOT/.env" ]; then
+  echo "[0/4] .env missing — creating from .env.example"
+  cp "$ROOT/.env.example" "$ROOT/.env"
+  echo "      ⚠ Edit .env and set OPENALGO_API_KEY + DATABASE_URL, then re-run"
+  exit 1
+fi
+
 # ── 1. TimescaleDB ────────────────────────────────────────────────
 echo "[1/4] Starting TimescaleDB..."
 docker compose up -d timescaledb
