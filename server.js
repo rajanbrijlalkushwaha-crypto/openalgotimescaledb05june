@@ -69,7 +69,7 @@ const pendingLoads = new Map(); // key: 'SYMBOL:EXPIRY' → Promise<chainData>
 const app    = express();
 const server = http.createServer(app);
 const io     = new IOServer(server, {
-  path: '/chain/socket.io',
+  path: '/socket.io',
   cors: { origin: '*', methods: ['GET', 'POST'] },
   transports: ['websocket', 'polling'],
 });
@@ -696,6 +696,13 @@ if (fs.existsSync(reactBuild)) {
     if (!req.path.startsWith('/api/') && !req.path.startsWith('/socket.io')) {
       res.sendFile(path.join(reactBuild, 'index.html'));
     }
+  });
+}
+
+// ─── SPA catch-all — serve index.html for any non-API route ──────────────────
+if (fs.existsSync(path.join(__dirname, 'frontend', 'build', 'index.html'))) {
+  app.get('*', (_, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'build', 'index.html'));
   });
 }
 

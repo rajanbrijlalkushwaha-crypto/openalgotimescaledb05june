@@ -78,7 +78,7 @@ function AppInner() {
   // ── Socket.IO ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const socket = io(window.location.origin, {
-      path: '/chain/socket.io',
+      path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 2000,

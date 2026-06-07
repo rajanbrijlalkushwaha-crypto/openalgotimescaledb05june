@@ -33,7 +33,7 @@ class SIOClient {
     if (this.socket?.connected) return;
 
     this.socket = io(SIO_URL, {
-      path: '/chain/socket.io',
+      path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
