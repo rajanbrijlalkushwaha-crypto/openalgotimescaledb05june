@@ -1,16 +1,19 @@
 /**
  * tickProducer.js
- * Receives every live tick from the broker (via server.js onTick),
- * saves it to TimescaleDB ticks_history, then notifies tickFeeder.
  *
- * Flow: Broker → onTick → tickProducer.save() → TimescaleDB → tickFeeder → Users
+ * Flow (order matters):
+ *   1. RAM already updated by onTick (state.chain patched in-place)
+ *   2. notify() — users receive new data IMMEDIATELY (zero DB wait)
+ *   3. db.upsertTick() — update latest-value table (fire-and-forget)
+ *   4. db.insertTick() — append to ticks_history (fire-and-forget)
+ *
+ * DB writes are always async/non-blocking so they never delay user delivery.
  */
 
 const db          = require('../db/database');
 const marketHours = require('../utils/marketHours');
 
 const listeners = new Set();
-
 const snapshotTimers = new Map();
 
 function onNewTick(fn) {
@@ -27,12 +30,12 @@ function notify(tick) {
 function save(tick) {
   const exchange = tick.exchange?.split('_')[0] || tick.exchange;
   const seg = exchange === 'MCX' ? 'MCX' : exchange?.startsWith('NSE') ? 'NSE' : 'BFO';
-
   if (!marketHours.isOpen(seg === 'NSE' ? 'NSE' : seg)) return;
 
   const record = { ...tick, ts: Date.now() };
-  db.insertTick(record); // fire-and-forget async insert
-  notify(record);
+  notify(record);          // 1. users first — no DB wait
+  db.upsertTick(record);   // 2. update latest-value row (fire-and-forget)
+  db.insertTick(record);   // 3. append to history (fire-and-forget)
 }
 
 function saveFutures(underlying, futSymbol, exchange, ltp, extra = {}) {
@@ -43,21 +46,22 @@ function saveFutures(underlying, futSymbol, exchange, ltp, extra = {}) {
     underlying, expiry: null, strike: null, side: 'futures',
     ltp, ts: Date.now(), ...extra,
   };
-  db.insertTick(record);
   notify(record);
+  db.upsertTick(record);
+  db.insertTick(record);
 }
 
 function saveSpot(underlying, exchange, ltp, extra = {}) {
   const seg = exchange?.includes('MCX') ? 'MCX' : exchange?.includes('BSE') ? 'BFO' : 'NSE';
   if (!marketHours.isOpen(seg)) return;
-
   const record = {
     symbol: underlying, exchange,
     underlying, expiry: null, strike: null, side: 'spot',
     ltp, ts: Date.now(), ...extra,
   };
-  db.insertTick(record);
   notify(record);
+  db.upsertTick(record);
+  db.insertTick(record);
 }
 
 function startSnapshotTimer(underlying, expiry, getChainFn) {

@@ -101,10 +101,9 @@ function daysToExpiry(expiryStr) {
   return Math.max((exp - Date.now()) / (1000 * 60 * 60 * 24), 0);
 }
 
-// ─── Tick handler: update cache + compute Greeks + save + broadcast ───────────
+// ─── Tick handler: update RAM cache + compute Greeks → notify users → save DB ──
 function onTick(tick) {
   const { symbol, exchange } = tick;
-  db.upsertTick(tick);
 
   // ── Futures tick (NIFTYFUT, BANKNIFTYFUT, etc.) ───────────────────────────
   const underlyingForFut = state.futureSymMap[symbol];
