@@ -365,6 +365,50 @@ async function loadUnderlyings() {
   );
 }
 
+// ─── Pre-warm chain cache for all underlyings ────────────────────────────────
+// Runs in background after startup. Each symbol's nearest expiry is loaded
+// once into RAM so every user gets instant data regardless of who asks first.
+async function preloadAllChains() {
+  const segments = [
+    { seg: 'NFO', symbols: state.underlyings.NFO || [] },
+    { seg: 'BFO', symbols: state.underlyings.BFO || [] },
+    { seg: 'MCX', symbols: state.underlyings.MCX || [] },
+  ];
+
+  let loaded = 0, failed = 0;
+
+  for (const { seg, symbols } of segments) {
+    for (const sym of symbols) {
+      try {
+        // Get nearest expiry
+        if (!state.expiries[sym]) {
+          state.expiries[sym] = await (seg === 'MCX'
+            ? getMCXExpiries(API_KEY, REST_URL, sym)
+            : getExpiriesForExchange(API_KEY, REST_URL, sym, SEGMENT_META[seg]?.contractExchange || 'NFO')
+          ).catch(() => []);
+          if (state.expiries[sym].length) redisCache.setExpiries(sym, state.expiries[sym]);
+        }
+
+        const expiry = state.expiries[sym]?.[0];
+        if (!expiry) continue;
+
+        // Load nearest expiry chain into RAM (skips if already loaded)
+        await loadChain(sym, expiry, seg);
+        loaded++;
+        console.log(`[preload] ${sym} ${expiry} ✓`);
+
+        // Small pause to avoid flooding OpenAlgo
+        await new Promise(r => setTimeout(r, 300));
+      } catch (e) {
+        failed++;
+        console.warn(`[preload] ${sym} failed: ${e.message}`);
+      }
+    }
+  }
+
+  console.log(`[preload] Done — ${loaded} chains in RAM, ${failed} failed`);
+}
+
 // ─── Startup ──────────────────────────────────────────────────────────────────
 async function init() {
   await redisCache.connect(); // no-op if REDIS_URL not set
@@ -377,7 +421,7 @@ async function init() {
   await loadUnderlyings();
 
   const total = state.underlyings.NFO.length + state.underlyings.BFO.length + state.underlyings.MCX.length;
-  console.log(`[init] Ready — ${total} symbols available. Select any symbol in the frontend to load its chain.`);
+  console.log(`[init] ${total} symbols available — pre-warming cache in background...`);
 
   // Connect to OpenAlgo WebSocket (stays connected, ready for subscriptions)
   algoWS.connect();
@@ -385,6 +429,10 @@ async function init() {
 
   // Subscribe nearest futures for all tracked indices
   await subscribeNearestFutures();
+
+  // Pre-load all chains into RAM in background so every user gets instant data.
+  // Does not block startup — server is already accepting connections.
+  preloadAllChains().catch(e => console.error('[preload] Error:', e.message));
 }
 
 // ─── REST API ─────────────────────────────────────────────────────────────────
