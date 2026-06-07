@@ -120,8 +120,6 @@ function AppInner() {
 
     socket.on('chain_update', (msg) => {
       if (!msg?.data?.strikes) return;
-      activeSymRef.current = msg.symbol;
-      dispatchRef.current({ type: 'SET_CURRENT_SYMBOL', payload: msg.symbol });
       push(mapChain(msg.data.strikes), msg.data.underlying_ltp, msg.expiry, [], 25);
       setLoading(false);
     });
