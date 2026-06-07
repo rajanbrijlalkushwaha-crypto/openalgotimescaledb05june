@@ -367,45 +367,47 @@ async function loadUnderlyings() {
 // ─── Pre-warm chain cache for all underlyings ────────────────────────────────
 // Runs in background after startup. Each symbol's nearest expiry is loaded
 // once into RAM so every user gets instant data regardless of who asks first.
-async function preloadAllChains() {
-  const segments = [
-    { seg: 'NFO', symbols: state.underlyings.NFO || [] },
-    { seg: 'BFO', symbols: state.underlyings.BFO || [] },
-    { seg: 'MCX', symbols: state.underlyings.MCX || [] },
-  ];
+// Only pre-warm the major indices — these are what most users open first.
+// F&O stocks are loaded on-demand (first user request caches for everyone).
+// Loading ALL 200+ F&O symbols would hammer OpenAlgo and block user requests.
+const PRELOAD_SYMBOLS = [
+  { sym: 'NIFTY',      seg: 'NFO' },
+  { sym: 'BANKNIFTY',  seg: 'NFO' },
+  { sym: 'FINNIFTY',   seg: 'NFO' },
+  { sym: 'MIDCPNIFTY', seg: 'NFO' },
+  { sym: 'NIFTYNXT50', seg: 'NFO' },
+  { sym: 'SENSEX',     seg: 'BFO' },
+  { sym: 'BANKEX',     seg: 'BFO' },
+];
 
+async function preloadAllChains() {
   let loaded = 0, failed = 0;
 
-  for (const { seg, symbols } of segments) {
-    for (const sym of symbols) {
-      try {
-        // Get nearest expiry
-        if (!state.expiries[sym]) {
-          state.expiries[sym] = await (seg === 'MCX'
-            ? getMCXExpiries(API_KEY, REST_URL, sym)
-            : getExpiriesForExchange(API_KEY, REST_URL, sym, SEGMENT_META[seg]?.contractExchange || 'NFO')
-          ).catch(() => []);
-          if (state.expiries[sym].length) redisCache.setExpiries(sym, state.expiries[sym]);
-        }
-
-        const expiry = state.expiries[sym]?.[0];
-        if (!expiry) continue;
-
-        // Load nearest expiry chain into RAM (skips if already loaded)
-        await loadChain(sym, expiry, seg);
-        loaded++;
-        console.log(`[preload] ${sym} ${expiry} ✓`);
-
-        // Small pause to avoid flooding OpenAlgo
-        await new Promise(r => setTimeout(r, 300));
-      } catch (e) {
-        failed++;
-        console.warn(`[preload] ${sym} failed: ${e.message}`);
+  for (const { sym, seg } of PRELOAD_SYMBOLS) {
+    try {
+      if (!state.expiries[sym]) {
+        state.expiries[sym] = await (seg === 'MCX'
+          ? getMCXExpiries(API_KEY, REST_URL, sym)
+          : getExpiriesForExchange(API_KEY, REST_URL, sym, SEGMENT_META[seg]?.contractExchange || 'NFO')
+        ).catch(() => []);
+        if (state.expiries[sym].length) redisCache.setExpiries(sym, state.expiries[sym]);
       }
+
+      const expiry = state.expiries[sym]?.[0];
+      if (!expiry) { console.warn(`[preload] ${sym}: no expiries found`); continue; }
+
+      await loadChain(sym, expiry, seg);
+      loaded++;
+      console.log(`[preload] ${sym} ${expiry} ✓`);
+
+      await new Promise(r => setTimeout(r, 500));
+    } catch (e) {
+      failed++;
+      console.warn(`[preload] ${sym} failed: ${e.message}`);
     }
   }
 
-  console.log(`[preload] Done — ${loaded} chains in RAM, ${failed} failed`);
+  console.log(`[preload] Done — ${loaded}/${PRELOAD_SYMBOLS.length} major indices in RAM`);
 }
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
@@ -515,21 +517,26 @@ app.get('/api/expiries/:segment/:symbol', async (req, res) => {
     return res.json({ status: 'success', data: cached });
   }
 
-  // 3. OpenAlgo API
-  try {
-    let list;
-    if (seg === 'MCX') {
-      list = await getMCXExpiries(API_KEY, REST_URL, sym);
-    } else {
-      const exch = SEGMENT_META[seg]?.contractExchange || 'NFO';
-      list = await getExpiriesForExchange(API_KEY, REST_URL, sym, exch);
+  // 3. OpenAlgo API — retry up to 3 times on failure
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      let list;
+      if (seg === 'MCX') {
+        list = await getMCXExpiries(API_KEY, REST_URL, sym);
+      } else {
+        const exch = SEGMENT_META[seg]?.contractExchange || 'NFO';
+        list = await getExpiriesForExchange(API_KEY, REST_URL, sym, exch);
+      }
+      state.expiries[sym] = list;
+      redisCache.setExpiries(sym, list);
+      return res.json({ status: 'success', data: list });
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt));
     }
-    state.expiries[sym] = list;
-    redisCache.setExpiries(sym, list);
-    res.json({ status: 'success', data: list });
-  } catch (e) {
-    res.status(500).json({ status: 'error', message: e.message });
   }
+  res.status(500).json({ status: 'error', message: lastErr.message });
 });
 
 app.get('/api/chain/:symbol/:expiry', (req, res) => {
