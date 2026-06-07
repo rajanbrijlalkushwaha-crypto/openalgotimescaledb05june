@@ -84,30 +84,7 @@ async function init() {
       ON option_snapshots (underlying, expiry, created_at DESC)
   `);
 
-  // ── Data retention: auto-delete ticks_history older than N days ──────────────
-  // TimescaleDB drops full chunks — much faster than row-by-row DELETE.
-  const retentionDays = parseInt(process.env.TICK_RETENTION_DAYS || '90');
-  await pool.query(
-    `SELECT add_retention_policy('ticks_history', INTERVAL '${retentionDays} days', if_not_exists => TRUE)`
-  ).catch(() => {}); // silently skip if TimescaleDB extension not installed
-
-  // Keep option_snapshots lean — only last 1000 rows per underlying+expiry
-  await pool.query(`
-    CREATE OR REPLACE FUNCTION prune_snapshots() RETURNS void AS $$
-    BEGIN
-      DELETE FROM option_snapshots
-      WHERE id NOT IN (
-        SELECT id FROM (
-          SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY underlying, expiry ORDER BY created_at DESC
-          ) AS rn FROM option_snapshots
-        ) ranked WHERE rn <= 1000
-      );
-    END;
-    $$ LANGUAGE plpgsql;
-  `).catch(() => {});
-
-  console.log(`[DB] TimescaleDB ready — ticks_history retention: ${retentionDays} days`);
+  console.log('[DB] TimescaleDB ready — all tick history kept indefinitely');
 }
 
 // ── Latest-value upsert ───────────────────────────────────────────────────────
