@@ -12,6 +12,7 @@ const marketHours  = require('./utils/marketHours');
 const { getUnderlyings, getExpiriesForExchange, getMCXExpiries, getOptionChain, getMCXOptionChain, getNearestFuturesSymbol } = require('./openalgo/rest');
 const OpenAlgoWSClient = require('./openalgo/wsClient');
 const { computeGreeks } = require('./utils/greeks');
+const redisCache   = require('./cache/redisCache');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const REST_URL     = process.env.OPENALGO_REST_URL || 'http://127.0.0.1:5001';
@@ -52,12 +53,17 @@ function getIndexWsExchange(symbol, segment) {
 const state = {
   underlyings:  { NFO: [], BFO: [], MCX: [] },
   expiries:     {},
-  chain:        {},   // [symbol][expiry] = chainData
+  chain:        {},   // [symbol][expiry] = chainData  ← shared RAM cache for all users
   symMeta:      {},
   subscribed:   new Set(),
   futures:      {},   // { "NIFTY": { symbol:"NIFTY25JUN26FUT", ltp:0, prev_close:0, chg:0, pct:0 } }
   futureSymMap: {},   // { "NIFTY25JUN26FUT": "NIFTY" }  reverse lookup
 };
+
+// ─── Deduplication: in-flight loadChain promises ─────────────────────────────
+// Prevents 100 users requesting the same symbol from making 100 OpenAlgo calls.
+// The first request fetches; the rest await the same promise.
+const pendingLoads = new Map(); // key: 'SYMBOL:EXPIRY' → Promise<chainData>
 
 // ─── Express + HTTP + Socket.IO ───────────────────────────────────────────────
 const app    = express();
@@ -237,37 +243,80 @@ function subscribeChain(underlying, expiry, segment, chainData) {
   }
 }
 
-// ─── Load chain ───────────────────────────────────────────────────────────────
+// ─── Load chain (cache-first, deduplicated) ───────────────────────────────────
+//
+// Priority order for 100 concurrent users requesting the same symbol:
+//   1. RAM cache (state.chain)  — instant, 0 network calls
+//   2. Redis cache              — fast, survives server restart
+//   3. OpenAlgo REST API        — fetched ONCE; all waiting callers share the result
+//
 async function loadChain(symbol, expiry, segment) {
   if (!segment) {
     segment = Object.keys(SEGMENT_META).find(s => state.underlyings[s]?.includes(symbol)) || 'NFO';
   }
 
-  let chainData;
-  if (segment === 'MCX') {
-    chainData = await getMCXOptionChain(API_KEY, REST_URL, symbol, expiry, STRIKE_COUNT);
-  } else {
-    const chainExchange = getOptionChainExchange(symbol, segment);
-    chainData = await getOptionChain(API_KEY, REST_URL, symbol, chainExchange, expiry, STRIKE_COUNT);
+  // ── 1. RAM hit ───────────────────────────────────────────────────────────────
+  if (state.chain[symbol]?.[expiry]) {
+    return state.chain[symbol][expiry];
   }
 
-  for (const row of chainData.strikes || []) {
-    for (const side of ['ce', 'pe']) {
-      if (!row[side]) continue;
-      const o = row[side];
-      o.ltp_chg = o.ltp != null && o.prev_close != null ? +(o.ltp - o.prev_close).toFixed(2) : 0;
-      o.oi_chg  = 0;
+  // ── 2. Deduplication: if another request is already fetching this, wait for it
+  const key = `${symbol}:${expiry}`;
+  if (pendingLoads.has(key)) {
+    return pendingLoads.get(key);
+  }
+
+  // ── 3. Start the fetch — all latecomers will share this promise ──────────────
+  const fetchPromise = (async () => {
+    // 3a. Redis hit (warm after server restart)
+    const cached = await redisCache.getChain(symbol, expiry);
+    if (cached) {
+      state.chain[symbol]         = state.chain[symbol] || {};
+      state.chain[symbol][expiry] = cached;
+      subscribeChain(symbol, expiry, segment, cached);
+      tickProducer.startSnapshotTimer(symbol, expiry, () => state.chain[symbol]?.[expiry]);
+      console.log(`[cache] RAM+Redis hit: ${symbol} ${expiry}`);
+      return cached;
     }
+
+    // 3b. OpenAlgo REST — single call regardless of how many users asked
+    let chainData;
+    if (segment === 'MCX') {
+      chainData = await getMCXOptionChain(API_KEY, REST_URL, symbol, expiry, STRIKE_COUNT);
+    } else {
+      const chainExchange = getOptionChainExchange(symbol, segment);
+      chainData = await getOptionChain(API_KEY, REST_URL, symbol, chainExchange, expiry, STRIKE_COUNT);
+    }
+
+    for (const row of chainData.strikes || []) {
+      for (const side of ['ce', 'pe']) {
+        if (!row[side]) continue;
+        const o = row[side];
+        o.ltp_chg = o.ltp != null && o.prev_close != null ? +(o.ltp - o.prev_close).toFixed(2) : 0;
+        o.oi_chg  = 0;
+      }
+    }
+
+    state.chain[symbol]         = state.chain[symbol] || {};
+    state.chain[symbol][expiry] = chainData;
+
+    subscribeChain(symbol, expiry, segment, chainData);
+    db.saveSnapshot(symbol, expiry, chainData);
+    tickProducer.startSnapshotTimer(symbol, expiry, () => state.chain[symbol]?.[expiry]);
+
+    // Store in Redis for next server start
+    redisCache.setChain(symbol, expiry, chainData);
+
+    console.log(`[cache] Fetched from OpenAlgo: ${symbol} ${expiry}`);
+    return chainData;
+  })();
+
+  pendingLoads.set(key, fetchPromise);
+  try {
+    return await fetchPromise;
+  } finally {
+    pendingLoads.delete(key);
   }
-
-  state.chain[symbol]         = state.chain[symbol] || {};
-  state.chain[symbol][expiry] = chainData;
-
-  subscribeChain(symbol, expiry, segment, chainData); // computes Greeks into chainData first
-  db.saveSnapshot(symbol, expiry, chainData);         // now snapshot includes Greeks
-  tickProducer.startSnapshotTimer(symbol, expiry, () => state.chain[symbol]?.[expiry]);
-
-  return chainData;
 }
 
 // ─── Re-subscribe after WS reconnect ─────────────────────────────────────────
@@ -318,6 +367,7 @@ async function loadUnderlyings() {
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 async function init() {
+  await redisCache.connect(); // no-op if REDIS_URL not set
   await db.init();
 
   if (!API_KEY) { console.warn('[init] OPENALGO_API_KEY not set — set it in .env'); return; }
@@ -407,7 +457,18 @@ app.get('/api/futures', (_, res) => {
 app.get('/api/expiries/:segment/:symbol', async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
   const seg = req.params.segment.toUpperCase();
+
+  // 1. RAM cache
   if (state.expiries[sym]) return res.json({ status: 'success', data: state.expiries[sym] });
+
+  // 2. Redis cache
+  const cached = await redisCache.getExpiries(sym);
+  if (cached) {
+    state.expiries[sym] = cached;
+    return res.json({ status: 'success', data: cached });
+  }
+
+  // 3. OpenAlgo API
   try {
     let list;
     if (seg === 'MCX') {
@@ -417,6 +478,7 @@ app.get('/api/expiries/:segment/:symbol', async (req, res) => {
       list = await getExpiriesForExchange(API_KEY, REST_URL, sym, exch);
     }
     state.expiries[sym] = list;
+    redisCache.setExpiries(sym, list);
     res.json({ status: 'success', data: list });
   } catch (e) {
     res.status(500).json({ status: 'error', message: e.message });
