@@ -84,13 +84,6 @@ if (fs.existsSync(reactBuild)) {
   app.use(express.static(path.join(__dirname, 'public')));
 }
 
-// ─── Broadcast helpers ────────────────────────────────────────────────────────
-function broadcastTick(tick) {
-  io.emit('tick', tick);
-}
-function broadcastChainUpdate(symbol, expiry, data) {
-  io.emit('chain_update', { symbol, expiry, data });
-}
 
 // ─── Days to expiry helper ────────────────────────────────────────────────────
 function daysToExpiry(expiryStr) {
@@ -124,14 +117,7 @@ function onTick(tick) {
         if (chainData[exp]) chainData[exp].futures_ltp = tick.ltp;
       }
     }
-    tickProducer.saveFutures(underlyingForFut, symbol, exchange, tick.ltp);
-    broadcastTick({
-      ...tick,
-      underlying:      underlyingForFut,
-      side:            'futures',
-      futures_chg:     chg,
-      futures_pct_chg: pct,
-    });
+    tickProducer.saveFutures(underlyingForFut, symbol, exchange, tick.ltp, { futures_chg: chg, futures_pct_chg: pct });
     return;
   }
 
@@ -142,9 +128,7 @@ function onTick(tick) {
       for (const expiry of Object.keys(chainData)) {
         if (chainData[expiry]) chainData[expiry].underlying_ltp = tick.ltp;
       }
-      const spotTick = { ...tick, symbol: futMeta.underlying };
       tickProducer.saveSpot(futMeta.underlying, exchange, tick.ltp);
-      broadcastTick(spotTick);
     }
     return;
   }
@@ -154,21 +138,16 @@ function onTick(tick) {
     for (const expiry of Object.keys(chainData)) {
       if (chainData[expiry]) chainData[expiry].underlying_ltp = tick.ltp;
     }
-    tickProducer.saveSpot(symbol, exchange, tick.ltp);
-    // Add day change fields to spot tick
     const pc = tick.prev_close || 0;
-    const spotTick = {
-      ...tick,
-      side: 'spot',
+    tickProducer.saveSpot(symbol, exchange, tick.ltp, {
       spot_chg:     pc ? +(tick.ltp - pc).toFixed(2) : 0,
       spot_pct_chg: pc ? +((tick.ltp - pc) / pc * 100).toFixed(2) : 0,
-    };
-    broadcastTick(spotTick);
+    });
     return;
   }
 
   const meta = state.symMeta[symbol];
-  if (!meta) { broadcastTick(tick); return; }
+  if (!meta) return;
 
   const { underlying, expiry, strike, side } = meta;
   const cd = state.chain[underlying]?.[expiry];
@@ -205,7 +184,6 @@ function onTick(tick) {
   };
 
   tickProducer.save(enriched);
-  broadcastTick(enriched);
 }
 
 function getOptFields(underlying, expiry, symbol, side) {
@@ -289,7 +267,6 @@ async function loadChain(symbol, expiry, segment) {
   db.saveSnapshot(symbol, expiry, chainData);         // now snapshot includes Greeks
   tickProducer.startSnapshotTimer(symbol, expiry, () => state.chain[symbol]?.[expiry]);
 
-  broadcastChainUpdate(symbol, expiry, chainData);
   return chainData;
 }
 

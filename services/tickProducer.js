@@ -35,26 +35,26 @@ function save(tick) {
   notify(record);
 }
 
-function saveFutures(underlying, futSymbol, exchange, ltp) {
+function saveFutures(underlying, futSymbol, exchange, ltp, extra = {}) {
   const seg = exchange?.includes('BFO') ? 'BFO' : 'NSE';
   if (!marketHours.isOpen(seg)) return;
   const record = {
     symbol: futSymbol, exchange,
     underlying, expiry: null, strike: null, side: 'futures',
-    ltp, ts: Date.now(),
+    ltp, ts: Date.now(), ...extra,
   };
   db.insertTick(record);
   notify(record);
 }
 
-function saveSpot(underlying, exchange, ltp) {
+function saveSpot(underlying, exchange, ltp, extra = {}) {
   const seg = exchange?.includes('MCX') ? 'MCX' : exchange?.includes('BSE') ? 'BFO' : 'NSE';
   if (!marketHours.isOpen(seg)) return;
 
   const record = {
     symbol: underlying, exchange,
     underlying, expiry: null, strike: null, side: 'spot',
-    ltp, ts: Date.now(),
+    ltp, ts: Date.now(), ...extra,
   };
   db.insertTick(record);
   notify(record);
