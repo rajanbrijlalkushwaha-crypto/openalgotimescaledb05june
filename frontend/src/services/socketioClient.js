@@ -14,12 +14,9 @@
 
 import { io } from 'socket.io-client';
 
-const SIO_URL =
-  process.env.REACT_APP_PIPELINE_URL ||
-  (process.env.REACT_APP_API_URL
-    ? process.env.REACT_APP_API_URL.replace(/:\d+$/, ':3001')
-    : null) ||
-  `${window.location.protocol}//${window.location.hostname}:3001`;
+// Always use the same origin — Nginx handles SSL and proxies to Node.js.
+// Never connect directly to port 3001 (no SSL on Node.js).
+const SIO_URL = process.env.REACT_APP_PIPELINE_URL || window.location.origin;
 
 class SIOClient {
   constructor() {
